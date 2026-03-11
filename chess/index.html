@@ -26,6 +26,7 @@
       --check: rgba(220, 50, 50, 0.55);
       --white-timer: #f0d9b5;
       --black-timer: #b58863;
+      --sq-size: clamp(44px, calc((100vmin - 220px) / 8), 110px);
     }
 
     body {
@@ -123,8 +124,8 @@
     }
 
     .sq {
-      width: 70px;
-      height: 70px;
+      width: var(--sq-size);
+      height: var(--sq-size);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -163,7 +164,7 @@
     }
 
     .piece {
-      font-size: 48px;
+      font-size: calc(var(--sq-size) * 0.82);
       line-height: 1;
       cursor: pointer;
       position: relative;
@@ -172,20 +173,23 @@
     }
     .piece:hover { transform: scale(1.1); }
     .piece-white {
-      color: #ffffff;
-      -webkit-text-stroke: 1.5px #2d1b0e;
-      text-shadow: 0 2px 5px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.9);
+      color: #fffff0;
+      text-shadow:
+        -2px -2px 0 #2d1b0e,
+         2px -2px 0 #2d1b0e,
+        -2px  2px 0 #2d1b0e,
+         2px  2px 0 #2d1b0e,
+         0    0   6px rgba(0,0,0,0.5);
     }
     .piece-black {
-      color: #1a0800;
-      -webkit-text-stroke: 1px rgba(255,255,255,0.6);
-      text-shadow: 0 1px 3px rgba(255,255,255,0.3);
+      color: #0a0a0a;
+      text-shadow: none;
     }
 
     /* Rank/file labels */
     .board-labels-file {
       display: flex;
-      width: 560px;
+      width: calc(var(--sq-size) * 8);
       padding: 0 2px;
     }
     .board-labels-file span {
@@ -248,12 +252,9 @@
       font-size: 13px;
     }
 
-    @media (max-width: 700px) {
-      .sq { width: 44px; height: 44px; }
-      .piece { font-size: 28px; }
-      .board-labels-file { width: 352px; }
-      .player-panel { width: 140px; }
-      .timer { font-size: 24px; }
+    @media (max-width: 600px) {
+      .player-panel { width: 120px; }
+      .timer { font-size: 22px; }
     }
   </style>
 </head>
