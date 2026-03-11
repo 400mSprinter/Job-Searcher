@@ -163,15 +163,24 @@
     }
 
     .piece {
-      font-size: 44px;
+      font-size: 48px;
       line-height: 1;
       cursor: pointer;
       position: relative;
       z-index: 1;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
       transition: transform 0.08s;
     }
     .piece:hover { transform: scale(1.1); }
+    .piece-white {
+      color: #ffffff;
+      -webkit-text-stroke: 1.5px #2d1b0e;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.9);
+    }
+    .piece-black {
+      color: #1a0800;
+      -webkit-text-stroke: 1px rgba(255,255,255,0.6);
+      text-shadow: 0 1px 3px rgba(255,255,255,0.3);
+    }
 
     /* Rank/file labels */
     .board-labels-file {
@@ -436,7 +445,7 @@
         if (piece) {
           const key = (piece.color === 'w' ? 'w' : 'b') + piece.type.toUpperCase();
           const pieceEl = document.createElement('span');
-          pieceEl.className = 'piece';
+          pieceEl.className = 'piece ' + (piece.color === 'w' ? 'piece-white' : 'piece-black');
           pieceEl.textContent = PIECES[key] || '?';
           sqEl.appendChild(pieceEl);
         }
