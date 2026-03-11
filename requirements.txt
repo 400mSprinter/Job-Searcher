@@ -3,3 +3,5 @@ anthropic
 click
 rich
 python-dotenv
+fastapi
+uvicorn[standard]

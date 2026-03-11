@@ -38,7 +38,7 @@ STATUS_STYLES = {
 
 @click.group()
 def cli():
-    """Job Search Helper — track applications, match postings, get follow-up reminders."""
+    """Job Search Helper - track applications, match postings, get follow-up reminders."""
     init_db()
 
 
@@ -89,7 +89,7 @@ def list_apps(status):
         rprint("[yellow]No applications found.[/yellow]")
         return
 
-    title = f"Job Applications" + (f" — {status}" if status != "all" else "")
+    title = f"Job Applications" + (f" - {status}" if status != "all" else "")
     table = Table(title=title, show_lines=True)
     table.add_column("#", style="dim", width=4, justify="right")
     table.add_column("Company", style="bold", min_width=14)
@@ -106,8 +106,8 @@ def list_apps(status):
             app["company"],
             app["role"],
             f"[{style}]{app['status']}[/{style}]",
-            app["date_applied"] or "—",
-            app["follow_up_date"] or "—",
+            app["date_applied"] or "-",
+            app["follow_up_date"] or "-",
             (app["notes"] or "")[:60],
         )
 
@@ -186,7 +186,7 @@ def reminders():
             app["role"],
             f"[{style}]{app['status']}[/{style}]",
             reason,
-            app["contact"] or "—",
+            app["contact"] or "-",
         )
 
     console.print(table)
