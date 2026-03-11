@@ -766,6 +766,14 @@
     const piece = game.get(sqName);
 
     if (selected) {
+      // Clicking the already-selected piece → deselect
+      if (sqName === selected) {
+        selected = null;
+        validMoves = [];
+        renderBoard();
+        return;
+      }
+
       const move = validMoves.find(m => m.to === sqName);
       if (move) {
         const result = game.move({ from: selected, to: sqName, promotion: 'q' });
