@@ -111,6 +111,17 @@
       opacity: 0.6;
     }
 
+    .captured-pieces {
+      min-height: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1px;
+      font-size: 17px;
+      line-height: 1.3;
+    }
+    .captured-pieces .cap-w { color: #fffff0; text-shadow: -1px -1px 0 #2d1b0e, 1px -1px 0 #2d1b0e, -1px 1px 0 #2d1b0e, 1px 1px 0 #2d1b0e; }
+    .captured-pieces .cap-b { color: #0a0a0a; }
+
     /* Board */
     .board-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
@@ -269,6 +280,7 @@
     <div class="player-label">Black ■</div>
     <input class="player-name-input" id="name-black" value="Daughter" />
     <div class="timer black-timer" id="timer-black">10:00</div>
+    <div class="captured-pieces" id="cap-black"></div>
     <div class="piece-icon">♟</div>
   </div>
 
@@ -283,11 +295,19 @@
       <div class="timer-config">
         ⏱
         <select id="time-select" onchange="onTimeChange()">
-          <option value="300">5 min</option>
-          <option value="600" selected>10 min</option>
-          <option value="900">15 min</option>
-          <option value="1800">30 min</option>
-          <option value="0">No timer</option>
+          <optgroup label="Total time">
+            <option value="total:300">5 min</option>
+            <option value="total:600" selected>10 min</option>
+            <option value="total:900">15 min</option>
+            <option value="total:1800">30 min</option>
+          </optgroup>
+          <optgroup label="Per move">
+            <option value="move:30">30 sec / move</option>
+            <option value="move:60">1 min / move</option>
+            <option value="move:120">2 min / move</option>
+            <option value="move:300">5 min / move</option>
+          </optgroup>
+          <option value="none:0">No timer</option>
         </select>
       </div>
     </div>
@@ -298,6 +318,7 @@
     <div class="player-label">White □</div>
     <input class="player-name-input" id="name-white" value="Dad" />
     <div class="timer white-timer" id="timer-white">10:00</div>
+    <div class="captured-pieces" id="cap-white"></div>
     <div class="piece-icon">♙</div>
   </div>
 
@@ -311,14 +332,17 @@
   };
 
   const FILES = ['a','b','c','d','e','f','g','h'];
+  const PIECE_ORDER = { p: 0, n: 1, b: 2, r: 3, q: 4 };
 
   let game = new Chess();
-  let selected = null;       // currently selected square (e.g. 'e2')
-  let validMoves = [];       // Move objects for selected piece
-  let lastMove = null;       // { from, to }
+  let selected = null;
+  let validMoves = [];
+  let lastMove = null;
   let gameOver = false;
 
-  // Timers (seconds)
+  // Timers
+  let timerMode = 'total';   // 'total' | 'move' | 'none'
+  let timerSecs = 600;       // base seconds per mode
   let timeWhite, timeBlack;
   let timerInterval = null;
   let timerEnabled = true;
@@ -334,21 +358,22 @@
     clearInterval(timerInterval);
     timerInterval = null;
 
-    const secs = parseInt(document.getElementById('time-select').value);
-    timerEnabled = secs > 0;
-    timeWhite = timeBlack = secs;
+    const [mode, secs] = document.getElementById('time-select').value.split(':');
+    timerMode = mode;
+    timerSecs = parseInt(secs);
+    timerEnabled = timerMode !== 'none';
+    timeWhite = timeBlack = timerSecs;
 
     document.getElementById('btn-undo').disabled = false;
     renderBoard();
+    updateCaptures();
     renderTimers();
     updateStatus();
     startTimer();
   }
 
   function onTimeChange() {
-    // Only takes effect on next new game — inform user via status
     const s = document.getElementById('status');
-    const prev = s.textContent;
     s.textContent = 'Timer change applies on New Game';
     setTimeout(() => { if (!gameOver) updateStatus(); }, 1500);
   }
@@ -384,15 +409,23 @@
   function renderTimers() {
     const wEl = document.getElementById('timer-white');
     const bEl = document.getElementById('timer-black');
-
-    wEl.textContent = timerEnabled ? formatTime(timeWhite) : '—';
-    bEl.textContent = timerEnabled ? formatTime(timeBlack) : '—';
-
     const isWhiteTurn = game.turn() === 'w';
+
+    if (!timerEnabled) {
+      wEl.textContent = bEl.textContent = '—';
+    } else if (timerMode === 'move') {
+      // Active player shows their countdown; inactive shows the full per-move limit
+      wEl.textContent = isWhiteTurn ? formatTime(timeWhite) : formatTime(timerSecs);
+      bEl.textContent = !isWhiteTurn ? formatTime(timeBlack) : formatTime(timerSecs);
+    } else {
+      wEl.textContent = formatTime(timeWhite);
+      bEl.textContent = formatTime(timeBlack);
+    }
+
     wEl.classList.toggle('ticking', isWhiteTurn && timerEnabled && !gameOver);
     bEl.classList.toggle('ticking', !isWhiteTurn && timerEnabled && !gameOver);
-    wEl.classList.toggle('low', timerEnabled && timeWhite > 0 && timeWhite <= 30);
-    bEl.classList.toggle('low', timerEnabled && timeBlack > 0 && timeBlack <= 30);
+    wEl.classList.toggle('low', timerEnabled && timeWhite > 0 && timeWhite <= 30 && (timerMode === 'total' || isWhiteTurn));
+    bEl.classList.toggle('low', timerEnabled && timeBlack > 0 && timeBlack <= 30 && (timerMode === 'total' || !isWhiteTurn));
 
     document.getElementById('panel-white').classList.toggle('active-turn', isWhiteTurn && !gameOver);
     document.getElementById('panel-black').classList.toggle('active-turn', !isWhiteTurn && !gameOver);
@@ -402,6 +435,25 @@
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
     const s = (secs % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
+  }
+
+  // ---- Captured pieces ----
+  function updateCaptures() {
+    const wCap = [], bCap = [];
+    for (const move of game.history({ verbose: true })) {
+      if (move.captured) {
+        if (move.color === 'w') wCap.push(move.captured);
+        else bCap.push(move.captured);
+      }
+    }
+    wCap.sort((a, b) => PIECE_ORDER[a] - PIECE_ORDER[b]);
+    bCap.sort((a, b) => PIECE_ORDER[a] - PIECE_ORDER[b]);
+
+    // White captures black pieces; black captures white pieces
+    document.getElementById('cap-white').innerHTML =
+      wCap.map(p => `<span class="cap-b">${PIECES['b' + p.toUpperCase()]}</span>`).join('');
+    document.getElementById('cap-black').innerHTML =
+      bCap.map(p => `<span class="cap-w">${PIECES['w' + p.toUpperCase()]}</span>`).join('');
   }
 
   // ---- Board rendering ----
@@ -490,7 +542,13 @@
           lastMove = { from: selected, to: sqName };
           selected = null;
           validMoves = [];
+          // Reset per-move timer for the player who just became active
+          if (timerMode === 'move' && timerEnabled) {
+            if (game.turn() === 'w') timeWhite = timerSecs;
+            else timeBlack = timerSecs;
+          }
           renderBoard();
+          updateCaptures();
           renderTimers();
           updateStatus();
           return;
@@ -562,12 +620,11 @@
     if (gameOver) return;
     const undone = game.undo();
     if (!undone) return;
-    // Undo twice so same player is up (pass-and-play: undo both moves)
-    // Actually just undo once — opponent may want the move back
     lastMove = null;
     selected = null;
     validMoves = [];
     renderBoard();
+    updateCaptures();
     renderTimers();
     updateStatus();
   }
