@@ -36,6 +36,7 @@ def row_to_dict(row):
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/chess", StaticFiles(directory="chess", html=True), name="chess")
 
 
 @app.get("/")

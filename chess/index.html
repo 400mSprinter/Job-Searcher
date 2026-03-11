@@ -1,0 +1,569 @@
+<!-- Created: 2026-03-11 14:00 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222536;
+      --border: #2e3148;
+      --text: #e2e8f0;
+      --text-dim: #6b7280;
+      --accent: #6366f1;
+      --accent-hover: #4f52d6;
+      --light-sq: #f0d9b5;
+      --dark-sq: #b58863;
+      --selected: #7fc97f;
+      --valid-dot: rgba(0,0,0,0.25);
+      --last-move: rgba(255, 255, 100, 0.35);
+      --check: rgba(220, 50, 50, 0.55);
+      --white-timer: #f0d9b5;
+      --black-timer: #b58863;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      letter-spacing: 0.05em;
+    }
+    h1 span { color: var(--accent); }
+
+    /* Layout */
+    .game-wrap {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* Player panels */
+    .player-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      width: 180px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .player-panel.active-turn {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .player-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+    }
+    .player-name-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 15px;
+      font-weight: 600;
+      width: 100%;
+    }
+    .player-name-input:focus { outline: none; border-color: var(--accent); }
+
+    .timer {
+      font-size: 32px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      padding: 8px;
+      border-radius: 8px;
+      letter-spacing: 0.04em;
+    }
+    .timer.white-timer { background: var(--light-sq); color: #3d2b1f; }
+    .timer.black-timer { background: var(--dark-sq); color: #fff; }
+    .timer.ticking { box-shadow: 0 0 0 2px var(--accent); }
+    .timer.low { color: #ef4444 !important; animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .piece-icon {
+      font-size: 28px;
+      text-align: center;
+      opacity: 0.6;
+    }
+
+    /* Board */
+    .board-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      border: 3px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .sq {
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      transition: filter 0.1s;
+    }
+    .sq:hover { filter: brightness(1.1); }
+    .sq.light { background: var(--light-sq); }
+    .sq.dark  { background: var(--dark-sq); }
+    .sq.selected { background: var(--selected) !important; }
+    .sq.last-move { background-color: var(--last-move) !important;
+      /* blend on top of existing bg */
+      background-blend-mode: multiply;
+    }
+    .sq.in-check { background: var(--check) !important; }
+
+    /* Valid move dot */
+    .sq.valid-move::after {
+      content: '';
+      position: absolute;
+      width: 28%;
+      height: 28%;
+      border-radius: 50%;
+      background: var(--valid-dot);
+      pointer-events: none;
+    }
+    /* Valid capture ring */
+    .sq.valid-capture::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 6px solid var(--valid-dot);
+      pointer-events: none;
+    }
+
+    .piece {
+      font-size: 44px;
+      line-height: 1;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      transition: transform 0.08s;
+    }
+    .piece:hover { transform: scale(1.1); }
+
+    /* Rank/file labels */
+    .board-labels-file {
+      display: flex;
+      width: 560px;
+      padding: 0 2px;
+    }
+    .board-labels-file span {
+      flex: 1;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Status bar */
+    .status-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      min-width: 320px;
+    }
+    .status-bar.check { border-color: #ef4444; color: #ef4444; }
+    .status-bar.game-over { border-color: var(--accent); color: var(--accent); font-size: 16px; }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 18px;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--surface2); }
+    .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Timer config */
+    .timer-config {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .timer-config select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 5px 8px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 700px) {
+      .sq { width: 44px; height: 44px; }
+      .piece { font-size: 28px; }
+      .board-labels-file { width: 352px; }
+      .player-panel { width: 140px; }
+      .timer { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>♟ <span>Chess</span></h1>
+
+<div class="game-wrap">
+
+  <!-- Black player (top) -->
+  <div class="player-panel" id="panel-black">
+    <div class="player-label">Black ■</div>
+    <input class="player-name-input" id="name-black" value="Daughter" />
+    <div class="timer black-timer" id="timer-black">10:00</div>
+    <div class="piece-icon">♟</div>
+  </div>
+
+  <!-- Board -->
+  <div class="board-wrap">
+    <div id="board"></div>
+    <div class="board-labels-file" id="file-labels"></div>
+    <div class="status-bar" id="status">White's turn</div>
+    <div class="controls">
+      <button class="btn-primary" onclick="newGame()">New Game</button>
+      <button class="btn-outline" id="btn-undo" onclick="undoMove()">↩ Undo</button>
+      <div class="timer-config">
+        ⏱
+        <select id="time-select" onchange="onTimeChange()">
+          <option value="300">5 min</option>
+          <option value="600" selected>10 min</option>
+          <option value="900">15 min</option>
+          <option value="1800">30 min</option>
+          <option value="0">No timer</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- White player (bottom) -->
+  <div class="player-panel" id="panel-white">
+    <div class="player-label">White □</div>
+    <input class="player-name-input" id="name-white" value="Dad" />
+    <div class="timer white-timer" id="timer-white">10:00</div>
+    <div class="piece-icon">♙</div>
+  </div>
+
+</div>
+
+<script>
+  // Unicode pieces
+  const PIECES = {
+    wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙',
+    bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟',
+  };
+
+  const FILES = ['a','b','c','d','e','f','g','h'];
+
+  let game = new Chess();
+  let selected = null;       // currently selected square (e.g. 'e2')
+  let validMoves = [];       // Move objects for selected piece
+  let lastMove = null;       // { from, to }
+  let gameOver = false;
+
+  // Timers (seconds)
+  let timeWhite, timeBlack;
+  let timerInterval = null;
+  let timerEnabled = true;
+
+  // ---- Init ----
+  function newGame() {
+    game = new Chess();
+    selected = null;
+    validMoves = [];
+    lastMove = null;
+    gameOver = false;
+
+    clearInterval(timerInterval);
+    timerInterval = null;
+
+    const secs = parseInt(document.getElementById('time-select').value);
+    timerEnabled = secs > 0;
+    timeWhite = timeBlack = secs;
+
+    document.getElementById('btn-undo').disabled = false;
+    renderBoard();
+    renderTimers();
+    updateStatus();
+    startTimer();
+  }
+
+  function onTimeChange() {
+    // Only takes effect on next new game — inform user via status
+    const s = document.getElementById('status');
+    const prev = s.textContent;
+    s.textContent = 'Timer change applies on New Game';
+    setTimeout(() => { if (!gameOver) updateStatus(); }, 1500);
+  }
+
+  // ---- Timer ----
+  function startTimer() {
+    if (!timerEnabled) return;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(tickTimer, 1000);
+  }
+
+  function tickTimer() {
+    if (gameOver) { clearInterval(timerInterval); return; }
+    if (game.turn() === 'w') {
+      timeWhite--;
+      if (timeWhite <= 0) { timeWhite = 0; renderTimers(); onTimeout('w'); return; }
+    } else {
+      timeBlack--;
+      if (timeBlack <= 0) { timeBlack = 0; renderTimers(); onTimeout('b'); return; }
+    }
+    renderTimers();
+  }
+
+  function onTimeout(color) {
+    clearInterval(timerInterval);
+    gameOver = true;
+    const winner = color === 'w'
+      ? document.getElementById('name-black').value
+      : document.getElementById('name-white').value;
+    setStatus(`⏰ Time's up! ${winner} wins on time!`, 'game-over');
+  }
+
+  function renderTimers() {
+    const wEl = document.getElementById('timer-white');
+    const bEl = document.getElementById('timer-black');
+
+    wEl.textContent = timerEnabled ? formatTime(timeWhite) : '—';
+    bEl.textContent = timerEnabled ? formatTime(timeBlack) : '—';
+
+    const isWhiteTurn = game.turn() === 'w';
+    wEl.classList.toggle('ticking', isWhiteTurn && timerEnabled && !gameOver);
+    bEl.classList.toggle('ticking', !isWhiteTurn && timerEnabled && !gameOver);
+    wEl.classList.toggle('low', timerEnabled && timeWhite > 0 && timeWhite <= 30);
+    bEl.classList.toggle('low', timerEnabled && timeBlack > 0 && timeBlack <= 30);
+
+    document.getElementById('panel-white').classList.toggle('active-turn', isWhiteTurn && !gameOver);
+    document.getElementById('panel-black').classList.toggle('active-turn', !isWhiteTurn && !gameOver);
+  }
+
+  function formatTime(secs) {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  // ---- Board rendering ----
+  function renderBoard() {
+    const boardEl = document.getElementById('board');
+    boardEl.innerHTML = '';
+
+    // Render rank 8 down to rank 1
+    for (let rank = 8; rank >= 1; rank--) {
+      for (let fileIdx = 0; fileIdx < 8; fileIdx++) {
+        const file = FILES[fileIdx];
+        const sqName = file + rank;
+        const isLight = (fileIdx + rank) % 2 !== 0;
+
+        const sqEl = document.createElement('div');
+        sqEl.className = 'sq ' + (isLight ? 'light' : 'dark');
+        sqEl.dataset.sq = sqName;
+
+        // Highlights
+        if (selected === sqName) sqEl.classList.add('selected');
+        if (lastMove && (lastMove.from === sqName || lastMove.to === sqName)) {
+          sqEl.classList.add('last-move');
+        }
+
+        // Check highlight on king
+        if (game.in_check()) {
+          const kingPos = findKing(game.turn());
+          if (sqName === kingPos) sqEl.classList.add('in-check');
+        }
+
+        // Valid move dots
+        if (selected) {
+          const move = validMoves.find(m => m.to === sqName);
+          if (move) {
+            const piece = game.get(sqName);
+            sqEl.classList.add(piece ? 'valid-capture' : 'valid-move');
+          }
+        }
+
+        // Piece
+        const piece = game.get(sqName);
+        if (piece) {
+          const key = (piece.color === 'w' ? 'w' : 'b') + piece.type.toUpperCase();
+          const pieceEl = document.createElement('span');
+          pieceEl.className = 'piece';
+          pieceEl.textContent = PIECES[key] || '?';
+          sqEl.appendChild(pieceEl);
+        }
+
+        sqEl.addEventListener('click', () => onSquareClick(sqName));
+        boardEl.appendChild(sqEl);
+      }
+    }
+
+    // File labels
+    const labelsEl = document.getElementById('file-labels');
+    labelsEl.innerHTML = FILES.map(f => `<span>${f}</span>`).join('');
+  }
+
+  function findKing(color) {
+    for (let r = 1; r <= 8; r++) {
+      for (let f of FILES) {
+        const sq = f + r;
+        const p = game.get(sq);
+        if (p && p.type === 'k' && p.color === color) return sq;
+      }
+    }
+    return null;
+  }
+
+  // ---- Click handler ----
+  function onSquareClick(sqName) {
+    if (gameOver) return;
+
+    const piece = game.get(sqName);
+
+    // If a piece is already selected
+    if (selected) {
+      // Try to make the move
+      const move = validMoves.find(m => m.to === sqName);
+      if (move) {
+        // Handle promotion
+        let promotion = 'q'; // auto-promote to queen
+        const result = game.move({ from: selected, to: sqName, promotion });
+        if (result) {
+          lastMove = { from: selected, to: sqName };
+          selected = null;
+          validMoves = [];
+          renderBoard();
+          renderTimers();
+          updateStatus();
+          return;
+        }
+      }
+
+      // Clicked own piece — re-select
+      if (piece && piece.color === (game.turn() === 'w' ? 'w' : 'b')) {
+        selected = sqName;
+        validMoves = game.moves({ square: sqName, verbose: true });
+        renderBoard();
+        return;
+      }
+
+      // Deselect
+      selected = null;
+      validMoves = [];
+      renderBoard();
+      return;
+    }
+
+    // Select a piece
+    if (piece && piece.color === (game.turn() === 'w' ? 'w' : 'b')) {
+      selected = sqName;
+      validMoves = game.moves({ square: sqName, verbose: true });
+      renderBoard();
+    }
+  }
+
+  // ---- Status ----
+  function updateStatus() {
+    if (game.in_checkmate()) {
+      const winner = game.turn() === 'w'
+        ? document.getElementById('name-black').value
+        : document.getElementById('name-white').value;
+      setStatus(`♛ Checkmate! ${winner} wins!`, 'game-over');
+      gameOver = true;
+      clearInterval(timerInterval);
+      document.getElementById('btn-undo').disabled = true;
+    } else if (game.in_stalemate()) {
+      setStatus('½ Stalemate — Draw!', 'game-over');
+      gameOver = true;
+      clearInterval(timerInterval);
+    } else if (game.in_draw()) {
+      setStatus('½ Draw!', 'game-over');
+      gameOver = true;
+      clearInterval(timerInterval);
+    } else if (game.in_check()) {
+      const who = game.turn() === 'w'
+        ? document.getElementById('name-white').value
+        : document.getElementById('name-black').value;
+      setStatus(`⚠ Check! ${who}'s move`, 'check');
+    } else {
+      const who = game.turn() === 'w'
+        ? document.getElementById('name-white').value
+        : document.getElementById('name-black').value;
+      setStatus(`${game.turn() === 'w' ? '□' : '■'} ${who}'s turn`);
+    }
+  }
+
+  function setStatus(text, cls = '') {
+    const el = document.getElementById('status');
+    el.textContent = text;
+    el.className = 'status-bar' + (cls ? ' ' + cls : '');
+  }
+
+  // ---- Undo ----
+  function undoMove() {
+    if (gameOver) return;
+    const undone = game.undo();
+    if (!undone) return;
+    // Undo twice so same player is up (pass-and-play: undo both moves)
+    // Actually just undo once — opponent may want the move back
+    lastMove = null;
+    selected = null;
+    validMoves = [];
+    renderBoard();
+    renderTimers();
+    updateStatus();
+  }
+
+  // ---- Boot ----
+  newGame();
+</script>
+</body>
+</html>
