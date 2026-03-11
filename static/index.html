@@ -205,6 +205,18 @@
     .gh-job-meta span { margin-right: 10px; }
     .gh-no-results { color: var(--text-dim); font-size: 13px; text-align: center; padding: 20px 0; }
     .gh-loading { color: var(--text-dim); font-size: 13px; padding: 10px 0; }
+    .gh-keyword-chip {
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .gh-keyword-chip:hover { border-color: var(--accent); color: var(--text); }
+    .gh-keyword-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
     /* Modal */
     dialog {
@@ -319,9 +331,22 @@
     <div id="gh-companies" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
 
     <!-- Custom token input -->
-    <div style="display:flex;gap:8px;margin-bottom:16px">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
       <input type="text" id="gh-custom" placeholder="Custom board token (e.g. stripe)" style="max-width:220px" />
       <button class="btn-outline btn-sm" onclick="searchGreenhouse(document.getElementById('gh-custom').value.trim())">Search</button>
+    </div>
+
+    <!-- Filter -->
+    <div id="gh-filter-wrap" style="display:none;margin-bottom:12px">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <span style="font-size:11px;color:var(--text-dim);align-self:center;margin-right:2px">Quick filters:</span>
+        <button class="gh-keyword-chip" onclick="toggleKeyword(this)" data-kw="Korea">Korea</button>
+        <button class="gh-keyword-chip" onclick="toggleKeyword(this)" data-kw="Seoul">Seoul</button>
+        <button class="gh-keyword-chip" onclick="toggleKeyword(this)" data-kw="Sales">Sales</button>
+        <button class="gh-keyword-chip" onclick="toggleKeyword(this)" data-kw="BD">BD</button>
+        <button class="gh-keyword-chip" onclick="toggleKeyword(this)" data-kw="Business">Business</button>
+      </div>
+      <input type="text" id="gh-filter" placeholder="Or type to filter by title, location, or department..." oninput="renderGhJobs()" />
     </div>
 
     <!-- Results -->
@@ -592,6 +617,8 @@
 
   // --- Greenhouse Job Discovery ---
   let ghActiveToken = null;
+  let ghAllJobs = [];
+  let ghCompanyName = '';
 
   async function loadGreenhouseCompanies() {
     const res = await fetch('/api/greenhouse/companies');
@@ -606,32 +633,62 @@
     if (!token) return;
     ghActiveToken = token;
 
-    // Update active chip
     document.querySelectorAll('.gh-company-chip').forEach(c => {
       c.classList.toggle('active', c.dataset.token === token);
     });
 
     const results = document.getElementById('gh-results');
     results.innerHTML = '<p class="gh-loading">Fetching jobs...</p>';
+    document.getElementById('gh-filter-wrap').style.display = 'none';
+    document.getElementById('gh-filter').value = '';
+    document.querySelectorAll('.gh-keyword-chip').forEach(c => c.classList.remove('active'));
 
     const res = await fetch(`/api/greenhouse/${encodeURIComponent(token)}`);
     if (!res.ok) {
       const err = await res.json();
       results.innerHTML = `<p class="gh-no-results">${esc(err.detail || 'No board found.')}</p>`;
+      ghAllJobs = [];
       return;
     }
 
-    const jobs = await res.json();
-    if (jobs.length === 0) {
+    ghAllJobs = await res.json();
+    ghCompanyName = document.querySelector(`.gh-company-chip[data-token="${token}"]`)?.textContent
+      || token.charAt(0).toUpperCase() + token.slice(1);
+
+    if (ghAllJobs.length === 0) {
       results.innerHTML = '<p class="gh-no-results">No open roles found.</p>';
       return;
     }
 
-    const companyName = document.querySelector(`.gh-company-chip[data-token="${token}"]`)?.textContent
-      || token.charAt(0).toUpperCase() + token.slice(1);
+    document.getElementById('gh-filter-wrap').style.display = 'block';
+    renderGhJobs();
+  }
 
-    results.innerHTML = `<div style="color:var(--text-dim);font-size:12px;margin-bottom:10px">${jobs.length} open role(s)</div>` +
-      jobs.map(j => `
+  function toggleKeyword(btn) {
+    btn.classList.toggle('active');
+    document.getElementById('gh-filter').value = '';
+    renderGhJobs();
+  }
+
+  function renderGhJobs() {
+    const keywords = [...document.querySelectorAll('.gh-keyword-chip.active')].map(c => c.dataset.kw.toLowerCase());
+    const q = document.getElementById('gh-filter').value.toLowerCase();
+    const filtered = (keywords.length > 0 || q)
+      ? ghAllJobs.filter(j => {
+          const text = [j.title, j.location || '', ...j.departments].join(' ').toLowerCase();
+          if (keywords.length > 0) return keywords.some(kw => text.includes(kw));
+          return text.includes(q);
+        })
+      : ghAllJobs;
+
+    const results = document.getElementById('gh-results');
+    if (filtered.length === 0) {
+      results.innerHTML = '<p class="gh-no-results">No matching roles.</p>';
+      return;
+    }
+
+    results.innerHTML = `<div style="color:var(--text-dim);font-size:12px;margin-bottom:10px">${filtered.length} of ${ghAllJobs.length} role(s)</div>` +
+      filtered.map(j => `
         <div class="gh-job-card">
           <div style="flex:1">
             <div class="gh-job-title">${esc(j.title)}</div>
@@ -643,7 +700,7 @@
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
             ${j.url ? `<a href="${esc(j.url)}" target="_blank" rel="noopener" class="btn-ghost btn-sm" style="text-decoration:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--accent)">View</a>` : ''}
-            <button class="btn-primary btn-sm" onclick="addFromGreenhouse('${esc(companyName)}', '${esc(j.title)}', '${esc(j.url || '')}', '${esc(j.location || '')}')">+ Track</button>
+            <button class="btn-primary btn-sm" onclick="addFromGreenhouse('${esc(ghCompanyName)}', '${esc(j.title)}', '${esc(j.url || '')}', '${esc(j.location || '')}')">+ Track</button>
           </div>
         </div>
       `).join('');

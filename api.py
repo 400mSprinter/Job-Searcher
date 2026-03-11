@@ -129,7 +129,7 @@ GREENHOUSE_COMPANIES = [
     {"name": "Galaxy Digital",    "token": "galaxy"},
     {"name": "Kraken",            "token": "kraken"},
     {"name": "KKR",               "token": "kkr"},
-    {"name": "Anchorage Digital", "token": "anchorageDigital"},
+    {"name": "Gemini",            "token": "gemini"},
     {"name": "FalconX",           "token": "falconx"},
     {"name": "BitGo",             "token": "bitgo"},
     {"name": "Jump Crypto",       "token": "jumpcrypto"},
