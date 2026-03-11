@@ -126,12 +126,6 @@
     .timer.low { color: #ef4444 !important; animation: pulse 1s ease-in-out infinite; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-    .piece-icon {
-      font-size: 28px;
-      text-align: center;
-      opacity: 0.6;
-    }
-
     .captured-pieces {
       min-height: 26px;
       display: flex;
@@ -328,6 +322,9 @@
     .btn-hint { background: #f59e0b; color: #1a0f00; font-weight: 700; }
     .btn-hint:hover:not(:disabled) { background: #d97706; }
     .btn-hint:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-surrender { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+    .btn-surrender:hover:not(:disabled) { background: rgba(239,68,68,0.12); }
+    .btn-surrender:disabled { opacity: 0.35; cursor: not-allowed; }
 
     /* Timer + hint config */
     .timer-config {
@@ -401,7 +398,6 @@
     <div class="timer black-timer" id="timer-black">10:00</div>
     <div class="captured-pieces" id="cap-black"></div>
     <div class="hint-badge-row">💡 <span class="hint-count" id="hint-badge-black">3</span> hints left</div>
-    <div class="piece-icon">♟</div>
   </div>
 
   <!-- Board -->
@@ -420,6 +416,7 @@
       <button class="btn-outline" id="btn-pause" onclick="togglePause()">⏸ Pause</button>
       <button class="btn-outline" id="btn-undo" onclick="undoMove()">↩ Undo</button>
       <button class="btn-hint" id="btn-hint" onclick="requestHint()">💡 Hint</button>
+      <button class="btn-surrender" id="btn-surrender" onclick="surrender()">🏳 Surrender</button>
       <div class="timer-config">
         ⏱
         <select id="preset-select" onchange="applyPreset()">
@@ -494,7 +491,6 @@
     <div class="timer white-timer" id="timer-white">10:00</div>
     <div class="captured-pieces" id="cap-white"></div>
     <div class="hint-badge-row">💡 <span class="hint-count" id="hint-badge-white">3</span> hints left</div>
-    <div class="piece-icon">♙</div>
   </div>
 
 </div>
@@ -551,6 +547,7 @@
     hintsUsedBlack = 0;
 
     document.getElementById('btn-undo').disabled = false;
+    document.getElementById('btn-surrender').disabled = false;
     document.getElementById('btn-pause').textContent = '⏸ Pause';
     document.getElementById('hint-panel').style.display = 'none';
 
@@ -824,16 +821,19 @@
       gameOver = true;
       clearInterval(timerInterval);
       document.getElementById('btn-undo').disabled = true;
+      document.getElementById('btn-surrender').disabled = true;
       updateBackground();
     } else if (game.in_stalemate()) {
       setStatus('½ Stalemate — Draw!', 'game-over');
       gameOver = true;
       clearInterval(timerInterval);
+      document.getElementById('btn-surrender').disabled = true;
       updateBackground();
     } else if (game.in_draw()) {
       setStatus('½ Draw!', 'game-over');
       gameOver = true;
       clearInterval(timerInterval);
+      document.getElementById('btn-surrender').disabled = true;
       updateBackground();
     } else if (game.in_check()) {
       const who = game.turn() === 'w'
@@ -852,6 +852,24 @@
     const el = document.getElementById('status');
     el.textContent = text;
     el.className = 'status-bar' + (cls ? ' ' + cls : '');
+  }
+
+  // ---- Surrender ----
+  function surrender() {
+    if (gameOver) return;
+    const loser = game.turn() === 'w'
+      ? document.getElementById('name-white').value
+      : document.getElementById('name-black').value;
+    const winner = game.turn() === 'w'
+      ? document.getElementById('name-black').value
+      : document.getElementById('name-white').value;
+    gameOver = true;
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('btn-undo').disabled = true;
+    document.getElementById('btn-surrender').disabled = true;
+    setStatus(`🏳 ${loser} surrendered — ${winner} wins!`, 'game-over');
+    updateBackground();
   }
 
   // ---- Undo ----
