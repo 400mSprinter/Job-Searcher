@@ -117,7 +117,6 @@ def api_reminders():
 def api_statuses():
     return VALID_STATUSES
 
-
 # --- Greenhouse Job Discovery ---
 
 GREENHOUSE_COMPANIES = [
@@ -175,6 +174,29 @@ def api_greenhouse_jobs(token: str):
     except Exception:
         raise HTTPException(status_code=502, detail="Could not reach Greenhouse")
 
+
+
+# --- Workday Job Discovery ---
+
+WORKDAY_COMPANIES = [
+    {
+        "name": "BlackRock",
+        "subdomain": "blackrock.wd1",
+        "tenant": "blackrock",
+        "board": "BlackRock_Professional",
+    },
+]
+
+@app.get("/api/workday/companies")
+def api_workday_companies():
+    return [
+        {
+            "name": c["name"],
+            "key": c["tenant"],
+            "board_url": f"https://{c['subdomain']}.myworkdayjobs.com/{c['board']}",
+        }
+        for c in WORKDAY_COMPANIES
+    ]
 
 
 if __name__ == "__main__":

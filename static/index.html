@@ -352,6 +352,36 @@
     <!-- Results -->
     <div id="gh-results"></div>
   </div>
+
+  <!-- Workday Job Discovery -->
+  <div class="panel" style="margin-top:20px">
+    <div class="panel-header">
+      <h2>Job Discovery <span style="font-size:11px;color:var(--text-dim);font-weight:400">via Workday</span></h2>
+    </div>
+
+    <!-- Company chips -->
+    <div id="wd-companies" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+
+    <!-- Keyword search — opens Workday in new tab -->
+    <div id="wd-search-wrap" style="display:none;margin-bottom:12px">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <span style="font-size:11px;color:var(--text-dim);align-self:center;margin-right:2px">Search on Workday:</span>
+        <button class="gh-keyword-chip" onclick="openWorkday('Korea')" data-kw="Korea">Korea</button>
+        <button class="gh-keyword-chip" onclick="openWorkday('Seoul')" data-kw="Seoul">Seoul</button>
+        <button class="gh-keyword-chip" onclick="openWorkday('Sales')" data-kw="Sales">Sales</button>
+        <button class="gh-keyword-chip" onclick="openWorkday('BD')" data-kw="BD">BD</button>
+        <button class="gh-keyword-chip" onclick="openWorkday('Business')" data-kw="Business">Business</button>
+        <button class="gh-keyword-chip" onclick="openWorkday('APAC')" data-kw="APAC">APAC</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="wd-custom-kw" placeholder="Custom keyword..." style="max-width:220px"
+               onkeydown="if(event.key==='Enter') openWorkday(this.value.trim())" />
+        <button class="btn-outline btn-sm" onclick="openWorkday(document.getElementById('wd-custom-kw').value.trim())">Search</button>
+        <button class="btn-ghost btn-sm" onclick="openWorkday('')">Browse All</button>
+      </div>
+      <p style="margin-top:8px;font-size:11px;color:var(--text-dim)">Opens Workday job board in a new tab</p>
+    </div>
+  </div>
 </main>
 
 <!-- Add/Edit Modal -->
@@ -727,10 +757,36 @@
     setTimeout(() => { event.target.textContent = '+ Track'; event.target.disabled = false; }, 2000);
   }
 
-  // Init Greenhouse on load
+  // --- Workday Job Discovery ---
+  let wdActiveBoardUrl = null;
+
+  async function loadWorkdayCompanies() {
+    const res = await fetch('/api/workday/companies');
+    const companies = await res.json();
+    const container = document.getElementById('wd-companies');
+    container.innerHTML = companies.map(c => `
+      <button class="gh-company-chip" data-key="${esc(c.key)}" data-url="${esc(c.board_url)}" onclick="selectWorkday(this)">${esc(c.name)}</button>
+    `).join('');
+  }
+
+  function selectWorkday(btn) {
+    document.querySelectorAll('#wd-companies .gh-company-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    wdActiveBoardUrl = btn.dataset.url;
+    document.getElementById('wd-search-wrap').style.display = 'block';
+    document.getElementById('wd-custom-kw').value = '';
+  }
+
+  function openWorkday(keyword) {
+    if (!wdActiveBoardUrl) return;
+    const url = keyword ? `${wdActiveBoardUrl}?q=${encodeURIComponent(keyword)}` : wdActiveBoardUrl;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  // Init on load
   document.addEventListener('DOMContentLoaded', async () => {
     await loadStatuses();
-    await Promise.all([loadApps(), loadReminders(), loadGreenhouseCompanies()]);
+    await Promise.all([loadApps(), loadReminders(), loadGreenhouseCompanies(), loadWorkdayCompanies()]);
   });
 </script>
 </body>
