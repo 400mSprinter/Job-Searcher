@@ -291,24 +291,28 @@
     <div class="status-bar" id="status">White's turn</div>
     <div class="controls">
       <button class="btn-primary" onclick="newGame()">New Game</button>
+      <button class="btn-outline" id="btn-pause" onclick="togglePause()">⏸ Pause</button>
       <button class="btn-outline" id="btn-undo" onclick="undoMove()">↩ Undo</button>
       <div class="timer-config">
         ⏱
-        <select id="time-select" onchange="onTimeChange()">
-          <optgroup label="Total time">
-            <option value="total:300">5 min</option>
-            <option value="total:600" selected>10 min</option>
-            <option value="total:900">15 min</option>
-            <option value="total:1800">30 min</option>
-          </optgroup>
-          <optgroup label="Per move">
-            <option value="move:30">30 sec / move</option>
-            <option value="move:60">1 min / move</option>
-            <option value="move:120">2 min / move</option>
-            <option value="move:300">5 min / move</option>
-          </optgroup>
-          <option value="none:0">No timer</option>
+        <select id="total-select" onchange="onTimeChange()">
+          <option value="180">3 min</option>
+          <option value="300">5 min</option>
+          <option value="600" selected>10 min</option>
+          <option value="900">15 min</option>
+          <option value="1800">30 min</option>
+          <option value="0">No limit</option>
         </select>
+        <span style="color:var(--text-dim);font-size:12px">+</span>
+        <select id="increment-select" onchange="onTimeChange()">
+          <option value="0" selected>0 sec</option>
+          <option value="2">+2 sec</option>
+          <option value="5">+5 sec</option>
+          <option value="10">+10 sec</option>
+          <option value="15">+15 sec</option>
+          <option value="30">+30 sec</option>
+        </select>
+        <span style="color:var(--text-dim);font-size:11px">/move</span>
       </div>
     </div>
   </div>
@@ -340,12 +344,13 @@
   let lastMove = null;
   let gameOver = false;
 
-  // Timers
-  let timerMode = 'total';   // 'total' | 'move' | 'none'
-  let timerSecs = 600;       // base seconds per mode
+  // Timers (Fischer clock)
+  let totalSecs = 600;       // starting budget per player
+  let incrementSecs = 0;     // added to mover's clock after each move
   let timeWhite, timeBlack;
   let timerInterval = null;
   let timerEnabled = true;
+  let timerRunning = false;
 
   // ---- Init ----
   function newGame() {
@@ -357,19 +362,20 @@
 
     clearInterval(timerInterval);
     timerInterval = null;
+    timerRunning = false;
 
-    const [mode, secs] = document.getElementById('time-select').value.split(':');
-    timerMode = mode;
-    timerSecs = parseInt(secs);
-    timerEnabled = timerMode !== 'none';
-    timeWhite = timeBlack = timerSecs;
+    totalSecs = parseInt(document.getElementById('total-select').value);
+    incrementSecs = parseInt(document.getElementById('increment-select').value);
+    timerEnabled = totalSecs > 0;
+    timeWhite = timeBlack = totalSecs;
 
     document.getElementById('btn-undo').disabled = false;
+    document.getElementById('btn-pause').textContent = '⏸ Pause';
     renderBoard();
     updateCaptures();
     renderTimers();
     updateStatus();
-    startTimer();
+    // Don't auto-start — wait for first move
   }
 
   function onTimeChange() {
@@ -378,15 +384,31 @@
     setTimeout(() => { if (!gameOver) updateStatus(); }, 1500);
   }
 
+  function togglePause() {
+    if (gameOver || !timerEnabled) return;
+    if (timerRunning) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerRunning = false;
+      document.getElementById('btn-pause').textContent = '▶ Resume';
+      setStatus('Game paused', '');
+    } else {
+      startTimer();
+      updateStatus();
+    }
+  }
+
   // ---- Timer ----
   function startTimer() {
     if (!timerEnabled) return;
     clearInterval(timerInterval);
     timerInterval = setInterval(tickTimer, 1000);
+    timerRunning = true;
+    document.getElementById('btn-pause').textContent = '⏸ Pause';
   }
 
   function tickTimer() {
-    if (gameOver) { clearInterval(timerInterval); return; }
+    if (gameOver) { clearInterval(timerInterval); timerRunning = false; return; }
     if (game.turn() === 'w') {
       timeWhite--;
       if (timeWhite <= 0) { timeWhite = 0; renderTimers(); onTimeout('w'); return; }
@@ -399,6 +421,7 @@
 
   function onTimeout(color) {
     clearInterval(timerInterval);
+    timerRunning = false;
     gameOver = true;
     const winner = color === 'w'
       ? document.getElementById('name-black').value
@@ -411,21 +434,13 @@
     const bEl = document.getElementById('timer-black');
     const isWhiteTurn = game.turn() === 'w';
 
-    if (!timerEnabled) {
-      wEl.textContent = bEl.textContent = '—';
-    } else if (timerMode === 'move') {
-      // Active player shows their countdown; inactive shows the full per-move limit
-      wEl.textContent = isWhiteTurn ? formatTime(timeWhite) : formatTime(timerSecs);
-      bEl.textContent = !isWhiteTurn ? formatTime(timeBlack) : formatTime(timerSecs);
-    } else {
-      wEl.textContent = formatTime(timeWhite);
-      bEl.textContent = formatTime(timeBlack);
-    }
+    wEl.textContent = timerEnabled ? formatTime(timeWhite) : '—';
+    bEl.textContent = timerEnabled ? formatTime(timeBlack) : '—';
 
-    wEl.classList.toggle('ticking', isWhiteTurn && timerEnabled && !gameOver);
-    bEl.classList.toggle('ticking', !isWhiteTurn && timerEnabled && !gameOver);
-    wEl.classList.toggle('low', timerEnabled && timeWhite > 0 && timeWhite <= 30 && (timerMode === 'total' || isWhiteTurn));
-    bEl.classList.toggle('low', timerEnabled && timeBlack > 0 && timeBlack <= 30 && (timerMode === 'total' || !isWhiteTurn));
+    wEl.classList.toggle('ticking', isWhiteTurn && timerEnabled && timerRunning && !gameOver);
+    bEl.classList.toggle('ticking', !isWhiteTurn && timerEnabled && timerRunning && !gameOver);
+    wEl.classList.toggle('low', timerEnabled && timeWhite > 0 && timeWhite <= 30);
+    bEl.classList.toggle('low', timerEnabled && timeBlack > 0 && timeBlack <= 30);
 
     document.getElementById('panel-white').classList.toggle('active-turn', isWhiteTurn && !gameOver);
     document.getElementById('panel-black').classList.toggle('active-turn', !isWhiteTurn && !gameOver);
@@ -542,11 +557,13 @@
           lastMove = { from: selected, to: sqName };
           selected = null;
           validMoves = [];
-          // Reset per-move timer for the player who just became active
-          if (timerMode === 'move' && timerEnabled) {
-            if (game.turn() === 'w') timeWhite = timerSecs;
-            else timeBlack = timerSecs;
+          // Fischer increment: add bonus to the player who just moved
+          if (timerEnabled && incrementSecs > 0) {
+            if (game.turn() === 'b') timeWhite += incrementSecs; // white just moved
+            else timeBlack += incrementSecs;                      // black just moved
           }
+          // Auto-start timer on first move
+          if (!timerRunning && !gameOver) startTimer();
           renderBoard();
           updateCaptures();
           renderTimers();
