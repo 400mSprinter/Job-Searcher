@@ -25,8 +25,6 @@
       --last-move: rgba(255, 255, 100, 0.35);
       --check: rgba(220, 50, 50, 0.55);
       --hint-sq: rgba(245, 158, 11, 0.55);
-      --white-timer: #f0d9b5;
-      --black-timer: #b58863;
       --sq-size: clamp(44px, calc((100vmin - 220px) / 8), 110px);
       --rank-w: 20px;
     }
@@ -69,7 +67,6 @@
     }
     h1 span { color: var(--accent); }
 
-    /* Layout */
     .game-wrap {
       display: flex;
       gap: 24px;
@@ -84,7 +81,7 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 16px;
-      width: 180px;
+      width: 190px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -126,6 +123,26 @@
     .timer.low { color: #ef4444 !important; animation: pulse 1s ease-in-out infinite; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+    /* Per-player timer config */
+    .player-timer-config {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .player-timer-config select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      padding: 4px 5px;
+      font-size: 11px;
+      flex: 1;
+      min-width: 0;
+    }
+    .player-timer-config select:focus { outline: none; border-color: var(--accent); }
+
     .captured-pieces {
       min-height: 26px;
       display: flex;
@@ -141,7 +158,7 @@
     }
     .captured-pieces .cap-b { color: #0a0a0a; }
 
-    /* Hint badge in player panel */
+    /* Hint badge */
     .hint-badge-row {
       display: flex;
       align-items: center;
@@ -160,11 +177,9 @@
     }
     .hint-count.out { color: #ef4444; border-color: #ef4444; }
 
-    /* Board section */
+    /* Board */
     .board-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-
     .board-with-ranks { display: flex; align-items: stretch; }
-
     .rank-labels {
       display: flex;
       flex-direction: column;
@@ -191,12 +206,8 @@
       user-select: none;
     }
 
-    /* File labels row with rank-spacer */
     .file-row { display: flex; align-items: center; }
-    .rank-spacer {
-      width: calc(var(--rank-w) + 4px); /* matches .rank-labels + margin */
-      flex-shrink: 0;
-    }
+    .rank-spacer { width: calc(var(--rank-w) + 4px); flex-shrink: 0; }
     .board-labels-file {
       display: flex;
       width: calc(var(--sq-size) * 8);
@@ -223,12 +234,11 @@
     .sq:hover { filter: brightness(1.1); }
     .sq.light { background: var(--light-sq); }
     .sq.dark  { background: var(--dark-sq); }
-    .sq.selected { background: var(--selected) !important; }
-    .sq.last-move { background-color: var(--last-move) !important; background-blend-mode: multiply; }
-    .sq.in-check  { background: var(--check) !important; }
-    .sq.hint-sq   { background: var(--hint-sq) !important; }
+    .sq.selected    { background: var(--selected) !important; }
+    .sq.last-move   { background-color: var(--last-move) !important; background-blend-mode: multiply; }
+    .sq.in-check    { background: var(--check) !important; }
+    .sq.hint-sq     { background: var(--hint-sq) !important; }
 
-    /* Valid move dot */
     .sq.valid-move::after {
       content: '';
       position: absolute;
@@ -237,7 +247,6 @@
       background: var(--valid-dot);
       pointer-events: none;
     }
-    /* Valid capture ring */
     .sq.valid-capture::after {
       content: '';
       position: absolute;
@@ -265,7 +274,6 @@
     }
     .piece-black { color: #0a0a0a; text-shadow: none; }
 
-    /* Square coordinate label */
     .sq-coord {
       position: absolute;
       bottom: 2px;
@@ -279,9 +287,7 @@
     }
     .sq.light .sq-coord { color: rgba(70, 40, 15, 0.38); }
     .sq.dark  .sq-coord { color: rgba(255, 235, 195, 0.45); }
-    /* Keep coords visible on selected/hint squares */
-    .sq.selected  .sq-coord,
-    .sq.hint-sq   .sq-coord { opacity: 0.6; }
+    .sq.selected .sq-coord, .sq.hint-sq .sq-coord { opacity: 0.6; }
 
     /* Status bar */
     .status-bar {
@@ -326,16 +332,15 @@
     .btn-surrender:hover:not(:disabled) { background: rgba(239,68,68,0.12); }
     .btn-surrender:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    /* Timer + hint config */
-    .timer-config {
+    .game-config {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       font-size: 13px;
       color: var(--text-dim);
       flex-wrap: wrap;
     }
-    .timer-config select {
+    .game-config select {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -367,20 +372,11 @@
       color: var(--text-dim);
       margin-bottom: 8px;
     }
-    .hint-move-row strong {
-      color: #f59e0b;
-      font-size: 17px;
-      margin-left: 4px;
-    }
-    .hint-explain {
-      font-size: 14px;
-      line-height: 1.65;
-      color: var(--text);
-      transition: color 0.5s;
-    }
+    .hint-move-row strong { color: #f59e0b; font-size: 17px; margin-left: 4px; }
+    .hint-explain { font-size: 14px; line-height: 1.65; color: var(--text); transition: color 0.5s; }
 
     @media (max-width: 600px) {
-      .player-panel { width: 120px; }
+      .player-panel { width: 140px; }
       .timer { font-size: 22px; }
     }
   </style>
@@ -391,11 +387,36 @@
 
 <div class="game-wrap">
 
-  <!-- Black player (left) -->
+  <!-- Black player -->
   <div class="player-panel" id="panel-black">
     <div class="player-label">Black ■</div>
     <input class="player-name-input" id="name-black" value="Daughter" />
     <div class="timer black-timer" id="timer-black">10:00</div>
+    <div class="player-timer-config">
+      ⏱
+      <select id="total-b" onchange="onTimeChange()">
+        <option value="60">1m</option>
+        <option value="120">2m</option>
+        <option value="180">3m</option>
+        <option value="300">5m</option>
+        <option value="600" selected>10m</option>
+        <option value="900">15m</option>
+        <option value="1800">30m</option>
+        <option value="0">∞</option>
+      </select>
+      +
+      <select id="inc-b" onchange="onTimeChange()">
+        <option value="0" selected>0s</option>
+        <option value="1">+1s</option>
+        <option value="2">+2s</option>
+        <option value="3">+3s</option>
+        <option value="5">+5s</option>
+        <option value="10">+10s</option>
+        <option value="15">+15s</option>
+        <option value="20">+20s</option>
+        <option value="30">+30s</option>
+      </select>
+    </div>
     <div class="captured-pieces" id="cap-black"></div>
     <div class="hint-badge-row">💡 <span class="hint-count" id="hint-badge-black">3</span> hints left</div>
   </div>
@@ -417,8 +438,8 @@
       <button class="btn-outline" id="btn-undo" onclick="undoMove()">↩ Undo</button>
       <button class="btn-hint" id="btn-hint" onclick="requestHint()">💡 Hint</button>
       <button class="btn-surrender" id="btn-surrender" onclick="surrender()">🏳 Surrender</button>
-      <div class="timer-config">
-        ⏱
+      <div class="game-config">
+        Preset:
         <select id="preset-select" onchange="applyPreset()">
           <option value="">Custom</option>
           <optgroup label="Bullet">
@@ -444,28 +465,6 @@
           </optgroup>
           <option value="0:0">No limit</option>
         </select>
-        <select id="total-select" onchange="onTimeChange()">
-          <option value="60">1 min</option>
-          <option value="120">2 min</option>
-          <option value="180">3 min</option>
-          <option value="300">5 min</option>
-          <option value="600" selected>10 min</option>
-          <option value="900">15 min</option>
-          <option value="1800">30 min</option>
-          <option value="0">∞</option>
-        </select>
-        +
-        <select id="increment-select" onchange="onTimeChange()">
-          <option value="0" selected>0s</option>
-          <option value="1">+1s</option>
-          <option value="2">+2s</option>
-          <option value="3">+3s</option>
-          <option value="5">+5s</option>
-          <option value="10">+10s</option>
-          <option value="15">+15s</option>
-          <option value="20">+20s</option>
-          <option value="30">+30s</option>
-        </select>
         <span class="cfg-sep">|</span>
         💡
         <select id="hint-limit-select" onchange="onHintLimitChange()" title="Hints per player">
@@ -484,11 +483,36 @@
     </div>
   </div>
 
-  <!-- White player (right) -->
+  <!-- White player -->
   <div class="player-panel" id="panel-white">
     <div class="player-label">White □</div>
     <input class="player-name-input" id="name-white" value="Dad" />
     <div class="timer white-timer" id="timer-white">10:00</div>
+    <div class="player-timer-config">
+      ⏱
+      <select id="total-w" onchange="onTimeChange()">
+        <option value="60">1m</option>
+        <option value="120">2m</option>
+        <option value="180">3m</option>
+        <option value="300">5m</option>
+        <option value="600" selected>10m</option>
+        <option value="900">15m</option>
+        <option value="1800">30m</option>
+        <option value="0">∞</option>
+      </select>
+      +
+      <select id="inc-w" onchange="onTimeChange()">
+        <option value="0" selected>0s</option>
+        <option value="1">+1s</option>
+        <option value="2">+2s</option>
+        <option value="3">+3s</option>
+        <option value="5">+5s</option>
+        <option value="10">+10s</option>
+        <option value="15">+15s</option>
+        <option value="20">+20s</option>
+        <option value="30">+30s</option>
+      </select>
+    </div>
     <div class="captured-pieces" id="cap-white"></div>
     <div class="hint-badge-row">💡 <span class="hint-count" id="hint-badge-white">3</span> hints left</div>
   </div>
@@ -496,7 +520,6 @@
 </div>
 
 <script>
-  // Unicode pieces
   const PIECES = {
     wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙',
     bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟',
@@ -509,11 +532,11 @@
   let validMoves = [];
   let lastMove = null;
   let gameOver = false;
-  let hintHighlight = null; // { from, to }
+  let hintHighlight = null;
 
-  // Timers (Fischer clock)
-  let totalSecs = 600;
-  let incrementSecs = 0;
+  // Per-player Fischer clock
+  let totalSecsW = 600, totalSecsB = 600;
+  let incSecsW = 0,     incSecsB = 0;
   let timeWhite, timeBlack;
   let timerInterval = null;
   let timerEnabled = true;
@@ -537,10 +560,13 @@
     timerInterval = null;
     timerRunning = false;
 
-    totalSecs = parseInt(document.getElementById('total-select').value);
-    incrementSecs = parseInt(document.getElementById('increment-select').value);
-    timerEnabled = totalSecs > 0;
-    timeWhite = timeBlack = totalSecs;
+    totalSecsW = parseInt(document.getElementById('total-w').value);
+    totalSecsB = parseInt(document.getElementById('total-b').value);
+    incSecsW   = parseInt(document.getElementById('inc-w').value);
+    incSecsB   = parseInt(document.getElementById('inc-b').value);
+    timerEnabled = totalSecsW > 0 || totalSecsB > 0;
+    timeWhite = totalSecsW;
+    timeBlack = totalSecsB;
 
     hintLimit = parseInt(document.getElementById('hint-limit-select').value);
     hintsUsedWhite = 0;
@@ -563,8 +589,11 @@
     const val = document.getElementById('preset-select').value;
     if (!val) return;
     const [total, inc] = val.split(':');
-    document.getElementById('total-select').value = total;
-    document.getElementById('increment-select').value = inc;
+    // Apply same settings to both players
+    document.getElementById('total-w').value = total;
+    document.getElementById('total-b').value = total;
+    document.getElementById('inc-w').value   = inc;
+    document.getElementById('inc-b').value   = inc;
     onTimeChange(true);
   }
 
@@ -606,10 +635,11 @@
 
   function tickTimer() {
     if (gameOver) { clearInterval(timerInterval); timerRunning = false; return; }
-    if (game.turn() === 'w') {
+    const turn = game.turn();
+    if (turn === 'w' && totalSecsW > 0) {
       timeWhite--;
       if (timeWhite <= 0) { timeWhite = 0; renderTimers(); onTimeout('w'); return; }
-    } else {
+    } else if (turn === 'b' && totalSecsB > 0) {
       timeBlack--;
       if (timeBlack <= 0) { timeBlack = 0; renderTimers(); onTimeout('b'); return; }
     }
@@ -632,13 +662,13 @@
     const bEl = document.getElementById('timer-black');
     const isWhiteTurn = game.turn() === 'w';
 
-    wEl.textContent = timerEnabled ? formatTime(timeWhite) : '—';
-    bEl.textContent = timerEnabled ? formatTime(timeBlack) : '—';
+    wEl.textContent = totalSecsW > 0 ? formatTime(timeWhite) : '—';
+    bEl.textContent = totalSecsB > 0 ? formatTime(timeBlack) : '—';
 
-    wEl.classList.toggle('ticking', isWhiteTurn && timerEnabled && timerRunning && !gameOver);
-    bEl.classList.toggle('ticking', !isWhiteTurn && timerEnabled && timerRunning && !gameOver);
-    wEl.classList.toggle('low', timerEnabled && timeWhite > 0 && timeWhite <= 30);
-    bEl.classList.toggle('low', timerEnabled && timeBlack > 0 && timeBlack <= 30);
+    wEl.classList.toggle('ticking', isWhiteTurn  && totalSecsW > 0 && timerRunning && !gameOver);
+    bEl.classList.toggle('ticking', !isWhiteTurn && totalSecsB > 0 && timerRunning && !gameOver);
+    wEl.classList.toggle('low', totalSecsW > 0 && timeWhite > 0 && timeWhite <= 30);
+    bEl.classList.toggle('low', totalSecsB > 0 && timeBlack > 0 && timeBlack <= 30);
 
     document.getElementById('panel-white').classList.toggle('active-turn', isWhiteTurn && !gameOver);
     document.getElementById('panel-black').classList.toggle('active-turn', !isWhiteTurn && !gameOver);
@@ -654,10 +684,10 @@
 
   // ---- Background by turn ----
   function updateBackground() {
-    const isWhiteTurn = !gameOver && game.turn() === 'w';
-    const isBlackTurn = !gameOver && game.turn() === 'b';
-    document.body.classList.toggle('bg-white-turn', isWhiteTurn);
-    document.body.classList.toggle('bg-black-turn', isBlackTurn);
+    const wt = !gameOver && game.turn() === 'w';
+    const bt = !gameOver && game.turn() === 'b';
+    document.body.classList.toggle('bg-white-turn', wt);
+    document.body.classList.toggle('bg-black-turn', bt);
   }
 
   // ---- Captured pieces ----
@@ -671,7 +701,6 @@
     }
     wCap.sort((a, b) => PIECE_ORDER[a] - PIECE_ORDER[b]);
     bCap.sort((a, b) => PIECE_ORDER[a] - PIECE_ORDER[b]);
-
     document.getElementById('cap-white').innerHTML =
       wCap.map(p => `<span class="cap-b">${PIECES['b' + p.toUpperCase()]}</span>`).join('');
     document.getElementById('cap-black').innerHTML =
@@ -683,7 +712,6 @@
     const boardEl = document.getElementById('board');
     boardEl.innerHTML = '';
 
-    // Rank labels (8 → 1, top to bottom)
     const rankLabelsEl = document.getElementById('rank-labels');
     rankLabelsEl.innerHTML = '';
     for (let rank = 8; rank >= 1; rank--) {
@@ -692,7 +720,6 @@
       rankLabelsEl.appendChild(span);
     }
 
-    // Squares
     for (let rank = 8; rank >= 1; rank--) {
       for (let fileIdx = 0; fileIdx < 8; fileIdx++) {
         const file = FILES[fileIdx];
@@ -703,7 +730,6 @@
         sqEl.className = 'sq ' + (isLight ? 'light' : 'dark');
         sqEl.dataset.sq = sqName;
 
-        // Highlights (order matters — last wins for !important)
         if (lastMove && (lastMove.from === sqName || lastMove.to === sqName))
           sqEl.classList.add('last-move');
         if (game.in_check()) {
@@ -714,7 +740,6 @@
         if (hintHighlight && (sqName === hintHighlight.from || sqName === hintHighlight.to))
           sqEl.classList.add('hint-sq');
 
-        // Valid move dots/rings
         if (selected) {
           const move = validMoves.find(m => m.to === sqName);
           if (move) {
@@ -723,7 +748,6 @@
           }
         }
 
-        // Piece
         const piece = game.get(sqName);
         if (piece) {
           const key = (piece.color === 'w' ? 'w' : 'b') + piece.type.toUpperCase();
@@ -733,7 +757,6 @@
           sqEl.appendChild(pieceEl);
         }
 
-        // Coordinate label (e.g. "a8", "e4")
         const coordEl = document.createElement('span');
         coordEl.className = 'sq-coord';
         coordEl.textContent = sqName;
@@ -744,7 +767,6 @@
       }
     }
 
-    // File labels
     const labelsEl = document.getElementById('file-labels');
     labelsEl.innerHTML = FILES.map(f => `<span>${f}</span>`).join('');
   }
@@ -766,7 +788,7 @@
     const piece = game.get(sqName);
 
     if (selected) {
-      // Clicking the already-selected piece → deselect
+      // Click the already-selected piece → deselect
       if (sqName === selected) {
         selected = null;
         validMoves = [];
@@ -783,11 +805,9 @@
           validMoves = [];
           hintHighlight = null;
           document.getElementById('hint-panel').style.display = 'none';
-          // Fischer increment
-          if (timerEnabled && incrementSecs > 0) {
-            if (game.turn() === 'b') timeWhite += incrementSecs;
-            else timeBlack += incrementSecs;
-          }
+          // Fischer increment for the player who just moved
+          if (game.turn() === 'b' && totalSecsW > 0 && incSecsW > 0) timeWhite += incSecsW;
+          else if (game.turn() === 'w' && totalSecsB > 0 && incSecsB > 0) timeBlack += incSecsB;
           if (!timerRunning && !gameOver) startTimer();
           renderBoard();
           updateCaptures();
@@ -811,7 +831,6 @@
       return;
     }
 
-    // Select a piece
     if (piece && piece.color === (game.turn() === 'w' ? 'w' : 'b')) {
       selected = sqName;
       validMoves = game.moves({ square: sqName, verbose: true });
@@ -865,7 +884,7 @@
   // ---- Surrender ----
   function surrender() {
     if (gameOver) return;
-    const loser = game.turn() === 'w'
+    const loser  = game.turn() === 'w'
       ? document.getElementById('name-white').value
       : document.getElementById('name-black').value;
     const winner = game.turn() === 'w'
@@ -914,8 +933,8 @@
 
     const isWhite = game.turn() === 'w';
     const used = isWhite ? hintsUsedWhite : hintsUsedBlack;
-    const canHint = !gameOver && (hintLimit === 0 || used < hintLimit);
-    document.getElementById('btn-hint').disabled = !canHint;
+    document.getElementById('btn-hint').disabled =
+      gameOver || (!unlimited && used >= hintLimit);
   }
 
   async function requestHint() {
@@ -924,12 +943,10 @@
     const used = isWhite ? hintsUsedWhite : hintsUsedBlack;
     if (hintLimit !== 0 && used >= hintLimit) return;
 
-    // Count the hint
     if (isWhite) hintsUsedWhite++;
     else hintsUsedBlack++;
     updateHintBadges();
 
-    // Show loading panel
     const playerName = isWhite
       ? document.getElementById('name-white').value
       : document.getElementById('name-black').value;
@@ -938,11 +955,8 @@
     document.getElementById('hint-explain').textContent = 'Let me think... 🤔';
     document.getElementById('hint-panel').style.display = 'block';
 
-    // Clear old highlight
     hintHighlight = null;
     renderBoard();
-
-    // Lock button while fetching
     document.getElementById('btn-hint').disabled = true;
 
     try {
@@ -956,11 +970,9 @@
         throw new Error(err.detail || `HTTP ${resp.status}`);
       }
       const data = await resp.json();
-
       document.getElementById('hint-move-text').textContent = data.move || '?';
       document.getElementById('hint-explain').textContent =
         data.explanation || 'No explanation available.';
-
       if (data.from && data.to) {
         hintHighlight = { from: data.from, to: data.to };
         renderBoard();
@@ -970,7 +982,7 @@
       document.getElementById('hint-explain').textContent =
         `😕 Couldn't get hint: ${e.message}`;
     } finally {
-      updateHintBadges(); // re-enable button if hints remain
+      updateHintBadges();
     }
   }
 
