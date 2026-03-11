@@ -1,0 +1,5 @@
+# Created: 2026-03-11 11:00
+anthropic
+click
+rich
+python-dotenv
