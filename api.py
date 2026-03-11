@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -198,6 +198,49 @@ def api_workday_companies():
         }
         for c in WORKDAY_COMPANIES
     ]
+
+
+# --- Chess Hint ---
+
+@app.post("/api/chess/hint")
+async def chess_hint(request: Request):
+    import json as _json
+    import anthropic
+
+    body = await request.json()
+    fen = body.get("fen", "")
+    if not fen:
+        raise HTTPException(status_code=400, detail="FEN required")
+
+    client = anthropic.Anthropic()
+    try:
+        message = client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            max_tokens=400,
+            messages=[{
+                "role": "user",
+                "content": (
+                    f"You are a friendly chess coach helping young children (ages 6-10) learn chess.\n"
+                    f"Current board position (FEN): {fen}\n\n"
+                    "Suggest the best move for the player whose turn it is.\n"
+                    "Respond with ONLY valid JSON (no markdown, no code fences, no extra text):\n"
+                    '{\"move\": \"Nf3\", \"from\": \"g1\", \"to\": \"f3\", \"explanation\": \"...\"}\n\n'
+                    "Rules:\n"
+                    "- \"move\": the move in standard algebraic notation (SAN)\n"
+                    "- \"from\" and \"to\": exact square names in lowercase (e.g. \"e2\", \"g1\")\n"
+                    "- \"explanation\": 2-3 fun, simple sentences a 7-year-old can understand. "
+                    "No chess jargon. Use everyday words. Say which piece moves and why it helps."
+                ),
+            }],
+        )
+        text = message.content[0].text.strip()
+        # Strip markdown code fences if present
+        if text.startswith("```"):
+            lines = text.split("\n")
+            text = "\n".join(lines[1:-1] if lines and lines[-1].strip() == "```" else lines[1:])
+        return _json.loads(text.strip())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Hint generation failed: {str(e)}")
 
 
 if __name__ == "__main__":
