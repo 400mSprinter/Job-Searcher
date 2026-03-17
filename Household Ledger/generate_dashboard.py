@@ -553,6 +553,10 @@ tr:hover{background:rgba(88,166,255,.04)}
     <h3>&#51060;&#49345; &#51648;&#52636; &#44048;&#51648; (&#50900;&#54217;&#44512; &#45824;&#48708; 2&#48176; &#51060;&#49345;)</h3>
     <table id="anomaly-table"></table>
   </div>
+  <div style="margin-bottom:16px;padding:12px 16px;background:var(--card);border:1px solid var(--border);border-radius:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--text2);white-space:nowrap">&#uae30&#uac04:</span>
+    <div id="analysis-chart-filter" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+  </div>
   <div class="chart-grid">
     <div class="chart-card"><h3>&#44208;&#51228;&#49688;&#45800;&#48324; &#51648;&#52636;</h3><canvas id="chart-payment-method"></canvas></div>
     <div class="chart-card"><h3>&#49884;&#44036;&#45824;&#48324; &#51648;&#52636; &#54056;&#53556;</h3><canvas id="chart-hour-pattern"></canvas></div>
@@ -607,6 +611,7 @@ const destroyChart = (id) => { if (charts[id]) { charts[id].destroy(); delete ch
 let drillSource = '';
 let currentInvType = '';
 let expPieFilter = '';
+let analysisChartFilter = '';
 let _confirmOkFn = null;
 
 // ===== State =====
@@ -748,6 +753,7 @@ function switchPerson(idx) {
   currentInvType = '';
   drillSource = '';
   expPieFilter = '';
+  analysisChartFilter = '';
   document.querySelectorAll('.person-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.person) === idx));
   document.getElementById('user-name').textContent = DATA.customer.name;
   document.getElementById('user-detail').textContent = DATA.customer.gender + ' / ' + DATA.customer.age + '\uc138';
@@ -935,6 +941,39 @@ function setExpPieFilter(f) {
   const filterDiv = document.getElementById('exp-pie-filter');
   if (filterDiv) filterDiv.innerHTML = buildExpPieFilterHtml(f);
   renderExpPieOnly();
+}
+function buildAnalysisChartFilterHtml(f) {
+  const months = DATA.months.slice().reverse();
+  return '<button class="type-btn' + (f===''?' active':'') + '" onclick="setAnalysisChartFilter(\'\')">\uc804\uccb4</button>' +
+    '<button class="type-btn' + (f==='1'?' active':'') + '" onclick="setAnalysisChartFilter(\'1\')">\ucd5c\uadfc 1\uac1c\uc6d4</button>' +
+    '<button class="type-btn' + (f==='3'?' active':'') + '" onclick="setAnalysisChartFilter(\'3\')">\ucd5c\uadfc 3\uac1c\uc6d4</button>' +
+    '<button class="type-btn' + (f==='6'?' active':'') + '" onclick="setAnalysisChartFilter(\'6\')">\uc0c1\ubc18\uae30</button>' +
+    '<select style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 6px;color:var(--text);font-size:11px" onchange="setAnalysisChartFilter(this.value)">' +
+    '<option value="">\uc6d4 \uc120\ud0dd</option>' +
+    months.map(m => '<option value="' + m + '"' + (f===m?' selected':'') + '>' + m + '</option>').join('') +
+    '</select>';
+}
+function setAnalysisChartFilter(f) {
+  analysisChartFilter = f;
+  const filterDiv = document.getElementById('analysis-chart-filter');
+  if (filterDiv) filterDiv.innerHTML = buildAnalysisChartFilterHtml(f);
+  renderAnalysisChartsOnly();
+}
+function getAnalysisChartTxRange() {
+  const N = DATA.months.length;
+  let indices;
+  if (!analysisChartFilter) {
+    indices = Array.from({length: N}, (_, i) => i);
+  } else if (analysisChartFilter === '3' || analysisChartFilter === '6' || analysisChartFilter === '1') {
+    const cnt = Math.min(parseInt(analysisChartFilter), N);
+    indices = Array.from({length: cnt}, (_, i) => N - cnt + i);
+  } else {
+    const mi = DATA.months.indexOf(analysisChartFilter);
+    indices = mi >= 0 ? [mi] : [];
+  }
+  const startDate = indices.length ? DATA.months[indices[0]] : '';
+  const endDate = indices.length ? DATA.months[indices[indices.length-1]] : '';
+  return {indices, startDate, endDate};
 }
 function renderExpPieOnly() {
   const filter = expPieFilter;
@@ -1598,15 +1637,27 @@ function renderAnalysis() {
   anomalyHtml += '</tbody>';
   document.getElementById('anomaly-table').innerHTML = anomalyHtml;
 
-  // Payment method breakdown
+  // Build filter UI
+  const filterDiv = document.getElementById('analysis-chart-filter');
+  if (filterDiv) filterDiv.innerHTML = buildAnalysisChartFilterHtml(analysisChartFilter);
+
+  renderAnalysisChartsOnly();
+}
+function renderAnalysisChartsOnly() {
+  const {indices, startDate, endDate} = getAnalysisChartTxRange();
+  const suffix = analysisChartFilter==='' ? '' : analysisChartFilter==='1' ? ' (최근 1개월)' : analysisChartFilter==='3' ? ' (최근 3개월)' : analysisChartFilter==='6' ? ' (상반기)' : ' (' + analysisChartFilter + ')';
+
+  // Payment method breakdown - filtered by date range
   destroyChart('chart-payment-method');
   const pmData = {};
-  getAllTx().filter(t => t.type === '\uc9c0\ucd9c').forEach(t => {
+  getAllTx().filter(t => t.type === '\uc9c0\ucd9c' && (!startDate || (t.date >= startDate && t.date <= endDate))).forEach(t => {
     const pm = t.paymentMethod || '\uae30\ud0c0';
     pmData[pm] = (pmData[pm] || 0) + Math.abs(t.amount);
   });
   const pmSorted = Object.entries(pmData).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
   if (pmSorted.length > 0) {
+    const pmTitle = document.querySelector('#page-analysis .chart-grid .chart-card:first-child h3');
+    if (pmTitle) pmTitle.textContent = '\uacb0\uc81c\uc218\ub2e8\ubcc4 \uc9c0\ucd9c' + suffix;
     charts['chart-payment-method'] = new Chart(document.getElementById('chart-payment-method'), {
       type: 'bar',
       data: { labels: pmSorted.map(([k]) => k), datasets: [{ data: pmSorted.map(([, v]) => Math.round(v)), backgroundColor: COLORS, borderRadius: 6 }] },
@@ -1615,15 +1666,17 @@ function renderAnalysis() {
     });
   }
 
-  // Hourly spending pattern
+  // Hourly spending pattern - filtered by date range
   destroyChart('chart-hour-pattern');
   const hourTotals = new Array(24).fill(0);
   const hourCounts = new Array(24).fill(0);
-  getAllTx().filter(t => t.type === '\uc9c0\ucd9c' && t.time && t.time.length >= 2).forEach(t => {
+  getAllTx().filter(t => t.type === '\uc9c0\ucd9c' && t.time && t.time.length >= 2 && (!startDate || (t.date >= startDate && t.date <= endDate))).forEach(t => {
     const h = parseInt(t.time.substring(0, 2));
     if (!isNaN(h) && h >= 0 && h < 24) { hourTotals[h] += Math.abs(t.amount); hourCounts[h]++; }
   });
   if (hourCounts.some(c => c > 0)) {
+    const hrTitle = document.querySelector('#page-analysis .chart-grid .chart-card:last-child h3');
+    if (hrTitle) hrTitle.textContent = '\uc2dc\uac04\ub300\ubcc4 \uc9c0\ucd9c \ud328\ud134' + suffix;
     charts['chart-hour-pattern'] = new Chart(document.getElementById('chart-hour-pattern'), {
       type: 'bar',
       data: { labels: Array.from({length: 24}, (_, i) => i + '\uc2dc'), datasets: [{ data: hourTotals.map((t, i) => hourCounts[i] ? Math.round(t / hourCounts[i]) : 0), backgroundColor: Array.from({length: 24}, (_, i) => i >= 6 && i < 22 ? 'rgba(88,166,255,.6)' : 'rgba(188,140,255,.5)'), borderRadius: 4 }] },
