@@ -1098,18 +1098,20 @@ function renderCashflow() {
     <div class="kpi-card blue"><span class="kpi-label">\uc5f0\uac04 \uc21c\uc218\uc785</span><span class="kpi-value">${fmt(totalInc - totalExp)}</span></div>
   `;
 
-  // Stacked bar - uses edited cash flow data
+  // Stacked bar - income and expense as absolute values side by side
   destroyChart('chart-cashflow-detail');
   const incDatasets = Object.entries(cf.income).filter(([, v]) => v.some(x => x > 0)).map(([k, v], i) => ({
     label: k, data: v, backgroundColor: COLORS[i % COLORS.length], stack: 'income'
   }));
   const expDatasets = Object.entries(cf.expense).filter(([, v]) => v.some(x => x > 0)).map(([k, v], i) => ({
-    label: k, data: v.map(x => -x), backgroundColor: COLORS[(i + 4) % COLORS.length], stack: 'expense'
+    label: k, data: v, backgroundColor: COLORS[(i + 4) % COLORS.length], stack: 'expense'
   }));
+  const expRatioPlugin = { id:'expRatio', afterDatasetsDraw(chart) { const ctx=chart.ctx; const meta0=chart.getDatasetMeta(0), meta1=chart.getDatasetMeta(1); if(!meta0||!meta1)return; const n=chart.data.labels.length; for(let i=0;i<n;i++){const bar0=meta0.data[i],bar1=meta1.data[i];if(!bar0||!bar1)continue;const inc=chart.data.datasets[0].data[i],exp=Object.values(cf.expense).reduce((s,v)=>s+(v[i]||0),0);const pct=inc>0?(exp/inc*100):0;const x=(bar0.x+bar1.x)/2,y=Math.min(bar0.y,bar1.y)-8;ctx.save();ctx.fillStyle='#d29922';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(pct.toFixed(0)+'%',x,y);ctx.restore();} } };
   charts['chart-cashflow-detail'] = new Chart(document.getElementById('chart-cashflow-detail'), {
     type: 'bar',
     data: { labels, datasets: [...incDatasets, ...expDatasets] },
-    options: { responsive: true, onClick: (e, els) => { if (els.length) { const el = els[0]; const cat = [...incDatasets, ...expDatasets][el.datasetIndex].label; const month = DATA.months.find(m => m.endsWith('-' + labels[el.index])) || ''; const type = el.datasetIndex < incDatasets.length ? '\uc218\uc785' : '\uc9c0\ucd9c'; drillDown({ type, category: cat, month }); } }, plugins: { legend: { display: false } }, scales: { x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d22' } }, y: { stacked: true, ticks: { color: '#8b949e', callback: v => fmt(Math.abs(v)) }, grid: { color: '#30363d44' } } } }
+    options: { responsive: true, onClick: (e, els) => { if (els.length) { const el = els[0]; const cat = [...incDatasets, ...expDatasets][el.datasetIndex].label; const month = DATA.months.find(m => m.endsWith('-' + labels[el.index])) || ''; const type = el.datasetIndex < incDatasets.length ? '\uc218\uc785' : '\uc9c0\ucd9c'; drillDown({ type, category: cat, month }); } }, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d22' } }, y: { ticks: { color: '#8b949e', callback: v => fmt(v) }, grid: { color: '#30363d44' } } } },
+    plugins: [expRatioPlugin]
   });
 
   // Income breakdown - uses edited data
