@@ -475,6 +475,7 @@ tr:hover{background:rgba(88,166,255,.04)}
     <select id="tx-month"><option value="">&#47784;&#46304; &#50900;</option></select>
     <span class="info" id="tx-count"></span>
     <button class="btn btn-sm" id="btn-clear-filters" onclick="clearFilters()">&#54596;&#53552; &#52488;&#44592;&#54868;</button>
+    <button class="btn btn-sm" onclick="exportTxCsv()">CSV &#45796;&#50868;&#47196;&#46300;</button>
     <button class="btn btn-sm" onclick="resetAllEdits()" id="btn-reset-edits" style="display:none">&#49688;&#51221; &#52488;&#44592;&#54868;</button>
   </div>
   <div id="tx-charts-container" style="display:none">
@@ -551,6 +552,10 @@ tr:hover{background:rgba(88,166,255,.04)}
   <div class="table-card">
     <h3>&#51060;&#49345; &#51648;&#52636; &#44048;&#51648; (&#50900;&#54217;&#44512; &#45824;&#48708; 2&#48176; &#51060;&#49345;)</h3>
     <table id="anomaly-table"></table>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-card"><h3>&#44208;&#51228;&#49688;&#45800;&#48324; &#51648;&#52636;</h3><canvas id="chart-payment-method"></canvas></div>
+    <div class="chart-card"><h3>&#49884;&#44036;&#45824;&#48324; &#51648;&#52636; &#54056;&#53556;</h3><canvas id="chart-hour-pattern"></canvas></div>
   </div>
 </div>
 
@@ -998,8 +1003,11 @@ function renderDashboard() {
   const barLabelPlugin = { id:'barLbl', afterDatasetsDraw(chart) { const ctx=chart.ctx; chart.getDatasetMeta(0).data.forEach((bar,j)=>{ const v=chart.data.datasets[0].data[j]; if(v===null||v===undefined)return; ctx.save();ctx.fillStyle='#e6edf3';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(v.toFixed(1)+'%',bar.x,bar.y-3);ctx.restore(); }); } };
   charts['chart-savings-rate'] = new Chart(document.getElementById('chart-savings-rate'), {
     type: 'bar',
-    data: { labels, datasets: [{ label: '\uc800\ucd95\ub960 (%)', data: rates, backgroundColor: rates.map(v => v===null ? 'rgba(139,148,158,.3)' : v>=20 ? 'rgba(63,185,80,.7)' : v>=10 ? 'rgba(210,153,34,.7)' : 'rgba(248,81,73,.7)'), borderRadius: 4 }] },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#8b949e' } } }, scales: { x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d22' } }, y: { ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#30363d44' } } } },
+    data: { labels, datasets: [
+      { label: '\uc800\ucd95\ub960 (%)', data: rates, backgroundColor: rates.map(v => v===null ? 'rgba(139,148,158,.3)' : v>=20 ? 'rgba(63,185,80,.7)' : v>=10 ? 'rgba(210,153,34,.7)' : 'rgba(248,81,73,.7)'), borderRadius: 4 },
+      { type: 'line', label: '\ubaa9\ud45c 20%', data: labels.map(() => 20), borderColor: 'rgba(63,185,80,.7)', borderDash: [5,5], borderWidth: 2, pointRadius: 0, tension: 0, fill: false }
+    ]},
+    options: { responsive: true, plugins: { legend: { labels: { color: '#8b949e', filter: item => item.datasetIndex === 1 } } }, scales: { x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d22' } }, y: { ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#30363d44' } } } },
     plugins: [barLabelPlugin]
   });
 
@@ -1354,6 +1362,18 @@ function resetAllEdits() {
     renderTransactions();
   });
 }
+function exportTxCsv() {
+  const headers = ['\ub0a0\uc9dc', '\uc2dc\uac04', '\ud0c0\uc785', '\ub300\ubd84\ub958', '\uc18c\ubd84\ub958', '\ub0b4\uc6a9', '\uae08\uc561', '\uacb0\uc81c\uc218\ub2e8', '\uba54\ubaa8'];
+  const rows = [headers];
+  filteredTx.forEach(t => rows.push([t.date, t.time ? t.time.substring(0,5) : '', t.type, t.category, t.subcategory, t.description, t.amount, t.paymentMethod || '', t.memo || '']));
+  const csv = rows.map(r => r.map(f => '"' + String(f===null||f===undefined?'':f).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+  const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'transactions_' + new Date().toISOString().substring(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 document.getElementById('tx-search').addEventListener('input', filterTx);
 document.getElementById('tx-type').addEventListener('change', filterTx);
@@ -1577,6 +1597,40 @@ function renderAnalysis() {
   }
   anomalyHtml += '</tbody>';
   document.getElementById('anomaly-table').innerHTML = anomalyHtml;
+
+  // Payment method breakdown
+  destroyChart('chart-payment-method');
+  const pmData = {};
+  getAllTx().filter(t => t.type === '\uc9c0\ucd9c').forEach(t => {
+    const pm = t.paymentMethod || '\uae30\ud0c0';
+    pmData[pm] = (pmData[pm] || 0) + Math.abs(t.amount);
+  });
+  const pmSorted = Object.entries(pmData).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  if (pmSorted.length > 0) {
+    charts['chart-payment-method'] = new Chart(document.getElementById('chart-payment-method'), {
+      type: 'bar',
+      data: { labels: pmSorted.map(([k]) => k), datasets: [{ data: pmSorted.map(([, v]) => Math.round(v)), backgroundColor: COLORS, borderRadius: 6 }] },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b949e', callback: v => fmt(v) }, grid: { color: '#30363d44' } }, y: { ticks: { color: '#8b949e', font: { size: 11 } }, grid: { display: false } } } },
+      plugins: [hBarFmtPlugin]
+    });
+  }
+
+  // Hourly spending pattern
+  destroyChart('chart-hour-pattern');
+  const hourTotals = new Array(24).fill(0);
+  const hourCounts = new Array(24).fill(0);
+  getAllTx().filter(t => t.type === '\uc9c0\ucd9c' && t.time && t.time.length >= 2).forEach(t => {
+    const h = parseInt(t.time.substring(0, 2));
+    if (!isNaN(h) && h >= 0 && h < 24) { hourTotals[h] += Math.abs(t.amount); hourCounts[h]++; }
+  });
+  if (hourCounts.some(c => c > 0)) {
+    charts['chart-hour-pattern'] = new Chart(document.getElementById('chart-hour-pattern'), {
+      type: 'bar',
+      data: { labels: Array.from({length: 24}, (_, i) => i + '\uc2dc'), datasets: [{ data: hourTotals.map((t, i) => hourCounts[i] ? Math.round(t / hourCounts[i]) : 0), backgroundColor: Array.from({length: 24}, (_, i) => i >= 6 && i < 22 ? 'rgba(88,166,255,.6)' : 'rgba(188,140,255,.5)'), borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b949e', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#8b949e', callback: v => fmt(v) }, grid: { color: '#30363d44' } } } },
+      plugins: [barFmtPlugin]
+    });
+  }
 }
 
 // ===== FCF =====
