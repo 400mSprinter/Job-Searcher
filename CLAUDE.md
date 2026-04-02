@@ -54,3 +54,41 @@ Valid statuses: `Applied`, `Phone Screen`, `Interview`, `Offer`, `Rejected`, `Wi
 ## Claude API Usage
 
 `matcher.py` uses `claude-opus-4-6` with `thinking: {type: "adaptive"}` and streaming. The `ANTHROPIC_API_KEY` is loaded from `.env` via `python-dotenv`.
+
+## Project: Espresso Tracker
+
+A mobile-friendly web app for tracking espresso shots — beans, dose/yield/ratio, grind, tamp, brew time, taste notes, and ratings.
+
+### Architecture
+
+| File | Purpose |
+|------|---------|
+| `espresso/espresso_db.py` | SQLite init (`espresso.db`) and connection helper |
+| `espresso/espresso_tracker.py` | CRUD for `shots` table |
+| `espresso/espresso_stats.py` | Aggregated stats: averages, weekly trends, top beans, best shot |
+| `static/espresso.html` | Self-contained SPA frontend (dark theme, mobile-optimized) |
+
+### Database
+
+Single SQLite file `espresso.db` (created automatically). Schema:
+
+```
+shots(id, bean_name, bean_origin, bean_roaster, roast_level,
+      dose_grams, yield_grams, brew_ratio, grind_size, grinder,
+      tamp_pressure, brew_time_secs, water_temp_c, pressure_bar,
+      machine, pre_infusion, taste_notes, rating, notes,
+      shot_date, shot_time, created_at)
+```
+
+### API Endpoints
+
+All under `/api/espresso/`:
+- `GET /shots` — list shots (optional `?days=`, `?bean=`, `?rating=` filters)
+- `POST /shots` — create shot
+- `PATCH /shots/{id}` — update shot
+- `DELETE /shots/{id}` — delete shot
+- `GET /stats` — aggregated statistics
+- `GET /beans` — distinct bean names (autocomplete)
+- `GET /equipment` — distinct grinders/machines (autocomplete)
+
+Page served at `/espresso`.

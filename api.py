@@ -20,11 +20,18 @@ from tracker import (
     list_applications,
     update_application,
 )
+from espresso.espresso_db import init_espresso_db
+from espresso.espresso_tracker import (
+    add_shot, update_shot, get_shot, list_shots, delete_shot,
+    get_distinct_beans, get_distinct_equipment,
+)
+from espresso.espresso_stats import get_stats as get_espresso_stats
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    init_espresso_db()
     yield
 
 
@@ -241,6 +248,109 @@ async def chess_hint(request: Request):
         return _json.loads(text.strip())
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Hint generation failed: {str(e)}")
+
+
+# --- Espresso Tracker ---
+
+@app.get("/espresso")
+def serve_espresso():
+    return FileResponse("static/espresso.html")
+
+
+class ShotCreate(BaseModel):
+    bean_name: str
+    dose_grams: float
+    bean_origin: str | None = None
+    bean_roaster: str | None = None
+    roast_level: str | None = None
+    yield_grams: float | None = None
+    grind_size: int | None = None
+    grinder: str | None = None
+    tamp_pressure: str | None = None
+    brew_time_secs: int | None = None
+    water_temp_c: float | None = None
+    pressure_bar: float | None = None
+    machine: str | None = None
+    pre_infusion: int = 0
+    taste_notes: str | None = None
+    rating: int | None = None
+    notes: str | None = None
+    shot_date: str | None = None
+    shot_time: str | None = None
+
+
+class ShotUpdate(BaseModel):
+    bean_name: str | None = None
+    dose_grams: float | None = None
+    bean_origin: str | None = None
+    bean_roaster: str | None = None
+    roast_level: str | None = None
+    yield_grams: float | None = None
+    grind_size: int | None = None
+    grinder: str | None = None
+    tamp_pressure: str | None = None
+    brew_time_secs: int | None = None
+    water_temp_c: float | None = None
+    pressure_bar: float | None = None
+    machine: str | None = None
+    pre_infusion: int | None = None
+    taste_notes: str | None = None
+    rating: int | None = None
+    notes: str | None = None
+    shot_date: str | None = None
+    shot_time: str | None = None
+
+
+@app.get("/api/espresso/shots")
+def api_espresso_list(days: int | None = None, bean: str | None = None, rating: int | None = None):
+    shots = list_shots(days=days, bean=bean, rating=rating)
+    return [row_to_dict(s) for s in shots]
+
+
+@app.get("/api/espresso/shots/{id}")
+def api_espresso_get(id: int):
+    shot = get_shot(id)
+    if not shot:
+        raise HTTPException(status_code=404, detail="Shot not found")
+    return row_to_dict(shot)
+
+
+@app.post("/api/espresso/shots", status_code=201)
+def api_espresso_add(body: ShotCreate):
+    new_id = add_shot(**body.model_dump())
+    return {"id": new_id}
+
+
+@app.patch("/api/espresso/shots/{id}")
+def api_espresso_update(id: int, body: ShotUpdate):
+    if not get_shot(id):
+        raise HTTPException(status_code=404, detail="Shot not found")
+    fields = {k: v for k, v in body.model_dump().items() if v is not None}
+    if fields:
+        update_shot(id, **fields)
+    return row_to_dict(get_shot(id))
+
+
+@app.delete("/api/espresso/shots/{id}", status_code=204)
+def api_espresso_delete(id: int):
+    if not get_shot(id):
+        raise HTTPException(status_code=404, detail="Shot not found")
+    delete_shot(id)
+
+
+@app.get("/api/espresso/stats")
+def api_espresso_stats():
+    return get_espresso_stats()
+
+
+@app.get("/api/espresso/beans")
+def api_espresso_beans():
+    return get_distinct_beans()
+
+
+@app.get("/api/espresso/equipment")
+def api_espresso_equipment():
+    return get_distinct_equipment()
 
 
 if __name__ == "__main__":

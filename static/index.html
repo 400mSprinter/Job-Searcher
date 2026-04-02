@@ -274,7 +274,10 @@
 
 <header>
   <h1>Job <span>Search</span> Dashboard</h1>
-  <button class="btn-primary" onclick="openAddModal()">+ Add Application</button>
+  <div style="display:flex;gap:12px;align-items:center">
+    <a href="/espresso" style="color:var(--text-dim);text-decoration:none;font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">Espresso Tracker</a>
+    <button class="btn-primary" onclick="openAddModal()">+ Add Application</button>
+  </div>
 </header>
 
 <main>

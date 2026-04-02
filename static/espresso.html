@@ -1,0 +1,757 @@
+<!-- Created: 2026-04-02 10:00 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0f1117" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/static/espresso-manifest.json" />
+  <title>Espresso Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #222536; --border: #2e3148;
+      --text: #e2e8f0; --text-dim: #6b7280;
+      --accent: #d97706; --accent-hover: #b45309;
+      --danger: #ef4444; --success: #22c55e; --warm: #78350f;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; -webkit-tap-highlight-color: transparent; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    header h1 { font-size: 18px; font-weight: 700; }
+    header h1 span { color: var(--accent); }
+    button { cursor: pointer; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; transition: background 0.15s; }
+    .btn-primary { background: var(--accent); color: #fff; padding: 8px 16px; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-ghost { background: transparent; color: var(--text-dim); padding: 4px 8px; }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 7px 14px; }
+    .btn-outline:hover { background: var(--surface2); }
+    main { padding: 16px 20px; max-width: 600px; margin: 0 auto; }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+    /* Filters */
+    .filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .filter-pill { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+    .filter-pill:hover { border-color: var(--accent); color: var(--text); }
+    .filter-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* Shot cards */
+    .shots-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .shot-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s; }
+    .shot-card:hover { border-color: var(--accent); }
+    .shot-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .shot-bean { font-weight: 700; font-size: 15px; }
+    .shot-date { color: var(--text-dim); font-size: 12px; }
+    .shot-params { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+    .shot-param { background: var(--surface2); padding: 3px 10px; border-radius: 12px; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+    .shot-param b { color: var(--text); font-weight: 600; }
+    .shot-bottom { display: flex; justify-content: space-between; align-items: center; }
+    .shot-taste { color: var(--text-dim); font-size: 12px; font-style: italic; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .shot-rating { color: var(--accent); font-size: 14px; letter-spacing: 1px; }
+    .shot-actions { display: flex; gap: 4px; }
+    .empty-state { text-align: center; color: var(--text-dim); padding: 60px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+    .empty-state p { margin-bottom: 12px; }
+
+    /* Trends */
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .panel h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+    .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .bar { width: 100%; max-width: 36px; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
+    .bar-label { font-size: 9px; color: var(--text-dim); margin-top: 3px; }
+    .bar-value { font-size: 10px; color: var(--text); margin-bottom: 2px; }
+    .top-beans-list { display: flex; flex-direction: column; gap: 6px; }
+    .top-bean-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--surface2); border-radius: 6px; font-size: 13px; }
+    .top-bean-row .count { color: var(--text-dim); font-size: 12px; }
+    .best-shot { background: linear-gradient(135deg, var(--warm) 0%, var(--surface) 100%); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+    .best-shot h3 { font-size: 13px; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Modal */
+    dialog { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0; color: var(--text); width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    dialog::backdrop { background: rgba(0,0,0,0.7); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1; }
+    .modal-header h3 { font-size: 15px; font-weight: 600; }
+    .modal-body { padding: 16px 20px; display: grid; gap: 12px; }
+    .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--surface); }
+    label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+    input, select, textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px 10px; font-size: 16px; font-family: inherit; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    select option { background: var(--surface2); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .form-section { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 600; padding-top: 4px; border-top: 1px solid var(--border); }
+    .ratio-display { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 16px; text-align: center; color: var(--accent); font-weight: 700; }
+    .star-input { display: flex; gap: 4px; }
+    .star-input span { cursor: pointer; font-size: 28px; color: var(--border); transition: color 0.1s; user-select: none; -webkit-user-select: none; }
+    .star-input span.filled { color: var(--accent); }
+    .taste-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+    .taste-chip { padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+    .taste-chip:hover { border-color: var(--accent); color: var(--text); }
+    .taste-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .checkbox-wrap { display: flex; align-items: center; gap: 8px; }
+    .checkbox-wrap input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+
+    /* Export/import bar */
+    .data-bar { display: flex; gap: 8px; justify-content: center; padding: 16px 0; }
+    .data-bar button { font-size: 11px; color: var(--text-dim); }
+
+    @media (max-width: 500px) {
+      main { padding: 12px; }
+      header { padding: 12px 16px; }
+      .form-row-3 { grid-template-columns: 1fr 1fr; }
+      .form-row-3 > :last-child { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><span>Espresso</span> Tracker</h1>
+  <button class="btn-primary" onclick="openAddModal()">+ Log Shot</button>
+</header>
+
+<main>
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Shots</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-ratio">—</div><div class="stat-label">Avg Ratio</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-time">—</div><div class="stat-label">Avg Time</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-rating">—</div><div class="stat-label">Avg Rating</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-dose">—</div><div class="stat-label">Avg Dose</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-yield">—</div><div class="stat-label">Avg Yield</div></div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-pill active" onclick="setDayFilter(this, null)">All</button>
+    <button class="filter-pill" onclick="setDayFilter(this, 7)">7d</button>
+    <button class="filter-pill" onclick="setDayFilter(this, 30)">30d</button>
+    <button class="filter-pill" onclick="setDayFilter(this, 90)">90d</button>
+    <span style="color:var(--text-dim);font-size:11px;margin-left:6px">Rating:</span>
+    <button class="filter-pill rating-pill active" onclick="setRatingFilter(this, null)">Any</button>
+    <button class="filter-pill rating-pill" onclick="setRatingFilter(this, 4)">4+</button>
+    <button class="filter-pill rating-pill" onclick="setRatingFilter(this, 5)">5</button>
+  </div>
+
+  <div class="shots-list" id="shots-list">
+    <div class="empty-state"><p>Loading...</p></div>
+  </div>
+
+  <div id="best-shot-wrap"></div>
+
+  <div id="trends-section" style="display:none">
+    <div class="panel">
+      <h2>Weekly Shots</h2>
+      <div class="bar-chart" id="weekly-chart"></div>
+    </div>
+    <div class="panel">
+      <h2>Top Beans</h2>
+      <div class="top-beans-list" id="top-beans"></div>
+    </div>
+  </div>
+
+  <div class="data-bar">
+    <button class="btn-ghost btn-sm" onclick="exportData()">Export JSON</button>
+    <button class="btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">Import JSON</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)" />
+  </div>
+</main>
+
+<!-- Add/Edit Modal -->
+<dialog id="shot-modal">
+  <div class="modal-header">
+    <h3 id="modal-title">Log Espresso Shot</h3>
+    <button class="btn-ghost" onclick="document.getElementById('shot-modal').close()">&#10005;</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="modal-id" />
+
+    <div class="form-section">Beans</div>
+    <div class="form-row">
+      <div>
+        <label>Bean Name *</label>
+        <input type="text" id="f-bean_name" list="bean-list" required autocomplete="off" />
+        <datalist id="bean-list"></datalist>
+      </div>
+      <div>
+        <label>Origin</label>
+        <input type="text" id="f-bean_origin" placeholder="e.g. Ethiopia" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Roaster</label>
+        <input type="text" id="f-bean_roaster" placeholder="e.g. Blue Bottle" />
+      </div>
+      <div>
+        <label>Roast Level</label>
+        <select id="f-roast_level">
+          <option value="">—</option>
+          <option>Light</option>
+          <option>Medium-Light</option>
+          <option>Medium</option>
+          <option>Medium-Dark</option>
+          <option>Dark</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-section">Extraction</div>
+    <div class="form-row-3">
+      <div>
+        <label>Dose (g) *</label>
+        <input type="number" id="f-dose_grams" step="0.1" min="0" inputmode="decimal" oninput="updateRatio()" />
+      </div>
+      <div>
+        <label>Yield (g)</label>
+        <input type="number" id="f-yield_grams" step="0.1" min="0" inputmode="decimal" oninput="updateRatio()" />
+      </div>
+      <div>
+        <label>Ratio</label>
+        <div class="ratio-display" id="ratio-display">—</div>
+      </div>
+    </div>
+    <div class="form-row-3">
+      <div>
+        <label>Grind Size</label>
+        <input type="number" id="f-grind_size" min="0" inputmode="numeric" />
+      </div>
+      <div>
+        <label>Brew Time (s)</label>
+        <input type="number" id="f-brew_time_secs" min="0" inputmode="numeric" />
+      </div>
+      <div>
+        <label>Tamp</label>
+        <select id="f-tamp_pressure">
+          <option value="">—</option>
+          <option>Light</option>
+          <option>Medium</option>
+          <option>Hard</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-section">Equipment</div>
+    <div class="form-row">
+      <div>
+        <label>Grinder</label>
+        <input type="text" id="f-grinder" list="grinder-list" />
+        <datalist id="grinder-list"></datalist>
+      </div>
+      <div>
+        <label>Machine</label>
+        <input type="text" id="f-machine" list="machine-list" />
+        <datalist id="machine-list"></datalist>
+      </div>
+    </div>
+    <div class="form-row-3">
+      <div>
+        <label>Water Temp (&deg;C)</label>
+        <input type="number" id="f-water_temp_c" step="0.1" min="0" inputmode="decimal" />
+      </div>
+      <div>
+        <label>Pressure (bar)</label>
+        <input type="number" id="f-pressure_bar" step="0.1" min="0" inputmode="decimal" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <div class="checkbox-wrap" style="height:100%;align-items:center">
+          <input type="checkbox" id="f-pre_infusion" />
+          <label for="f-pre_infusion" style="margin:0;color:var(--text)">Pre-infusion</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">Tasting</div>
+    <div>
+      <label>Rating</label>
+      <div class="star-input" id="star-input">
+        <span onclick="setRating(1)">&#9733;</span>
+        <span onclick="setRating(2)">&#9733;</span>
+        <span onclick="setRating(3)">&#9733;</span>
+        <span onclick="setRating(4)">&#9733;</span>
+        <span onclick="setRating(5)">&#9733;</span>
+      </div>
+      <input type="hidden" id="f-rating" />
+    </div>
+    <div>
+      <label>Taste Notes</label>
+      <div class="taste-chips" id="taste-chips">
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Chocolate</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Fruity</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Nutty</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Floral</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Citrus</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Caramel</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Earthy</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Spicy</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Berry</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Smoky</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Sweet</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Bitter</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Acidic</button>
+        <button type="button" class="taste-chip" onclick="toggleTaste(this)">Creamy</button>
+      </div>
+      <input type="text" id="f-taste_notes" placeholder="Or type custom notes..." />
+    </div>
+    <div>
+      <label>Notes</label>
+      <textarea id="f-notes" rows="2" placeholder="Any other observations..."></textarea>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Date</label>
+        <input type="date" id="f-shot_date" />
+      </div>
+      <div>
+        <label>Time</label>
+        <input type="time" id="f-shot_time" />
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-outline" onclick="document.getElementById('shot-modal').close()">Cancel</button>
+    <button class="btn-primary" onclick="submitShot()">Save Shot</button>
+  </div>
+</dialog>
+
+<script>
+// ====== IndexedDB Layer ======
+const DB_NAME = 'EspressoTracker';
+const DB_VERSION = 1;
+const STORE = 'shots';
+let db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        const store = d.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+        store.createIndex('shot_date', 'shot_date', { unique: false });
+        store.createIndex('bean_name', 'bean_name', { unique: false });
+        store.createIndex('rating', 'rating', { unique: false });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+function txStore(mode) {
+  return db.transaction(STORE, mode).objectStore(STORE);
+}
+
+function dbAdd(shot) {
+  return new Promise((resolve, reject) => {
+    const req = txStore('readwrite').add(shot);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function dbPut(shot) {
+  return new Promise((resolve, reject) => {
+    const req = txStore('readwrite').put(shot);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function dbGet(id) {
+  return new Promise((resolve, reject) => {
+    const req = txStore('readonly').get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function dbDelete(id) {
+  return new Promise((resolve, reject) => {
+    const req = txStore('readwrite').delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function dbGetAll() {
+  return new Promise((resolve, reject) => {
+    const req = txStore('readonly').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// ====== App State ======
+const STATE = { shots: [], filterDays: null, filterRating: null };
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function stars(n) {
+  if (!n) return '';
+  return '<span style="color:var(--accent)">' + '\u2605'.repeat(n) + '</span>' +
+         '<span style="color:var(--border)">' + '\u2605'.repeat(5 - n) + '</span>';
+}
+
+// ====== Load & Render ======
+async function loadShots() {
+  let all = await dbGetAll();
+  // Sort by date desc, time desc
+  all.sort((a, b) => (b.shot_date + (b.shot_time || '')).localeCompare(a.shot_date + (a.shot_time || '')));
+
+  // Apply filters
+  if (STATE.filterDays) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - STATE.filterDays);
+    const cutStr = cutoff.toISOString().slice(0, 10);
+    all = all.filter(s => s.shot_date >= cutStr);
+  }
+  if (STATE.filterRating) {
+    all = all.filter(s => s.rating && s.rating >= STATE.filterRating);
+  }
+
+  STATE.shots = all;
+  renderShots();
+  renderStats();
+  updateAutocomplete();
+}
+
+function renderShots() {
+  const container = document.getElementById('shots-list');
+  if (STATE.shots.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No espresso shots logged yet.</p><button class="btn-primary" onclick="openAddModal()">Log Your First Shot</button></div>';
+    return;
+  }
+  container.innerHTML = STATE.shots.map(s => `
+    <div class="shot-card" onclick="openEditModal(${s.id})">
+      <div class="shot-card-top">
+        <div>
+          <div class="shot-bean">${esc(s.bean_name)}</div>
+          ${s.bean_roaster ? `<div style="color:var(--text-dim);font-size:12px">${esc(s.bean_roaster)}${s.roast_level ? ' &middot; ' + esc(s.roast_level) : ''}</div>` : ''}
+        </div>
+        <div style="text-align:right">
+          <div class="shot-date">${s.shot_date}${s.shot_time ? ' ' + s.shot_time : ''}</div>
+          <div class="shot-rating">${stars(s.rating)}</div>
+        </div>
+      </div>
+      <div class="shot-params">
+        <span class="shot-param"><b>${s.dose_grams}g</b> in</span>
+        ${s.yield_grams ? `<span class="shot-param"><b>${s.yield_grams}g</b> out</span>` : ''}
+        ${s.brew_ratio ? `<span class="shot-param">1:<b>${s.brew_ratio}</b></span>` : ''}
+        ${s.brew_time_secs ? `<span class="shot-param"><b>${s.brew_time_secs}s</b></span>` : ''}
+        ${s.grind_size != null ? `<span class="shot-param">Grind <b>${s.grind_size}</b></span>` : ''}
+        ${s.tamp_pressure ? `<span class="shot-param">Tamp <b>${esc(s.tamp_pressure)}</b></span>` : ''}
+        ${s.grinder ? `<span class="shot-param">${esc(s.grinder)}</span>` : ''}
+        ${s.machine ? `<span class="shot-param">${esc(s.machine)}</span>` : ''}
+      </div>
+      <div class="shot-bottom">
+        <div class="shot-taste">${esc(s.taste_notes || s.notes || '')}</div>
+        <div class="shot-actions">
+          <button class="btn-ghost btn-sm" onclick="event.stopPropagation();openEditModal(${s.id})">Edit</button>
+          <button class="btn-ghost btn-sm" style="color:var(--danger)" onclick="event.stopPropagation();confirmDelete(${s.id})">Del</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function renderStats() {
+  const all = await dbGetAll();
+  if (all.length === 0) {
+    document.getElementById('trends-section').style.display = 'none';
+    document.getElementById('best-shot-wrap').innerHTML = '';
+    return;
+  }
+
+  const withRatio = all.filter(s => s.brew_ratio);
+  const withTime = all.filter(s => s.brew_time_secs);
+  const withRating = all.filter(s => s.rating);
+  const withDose = all.filter(s => s.dose_grams);
+  const withYield = all.filter(s => s.yield_grams);
+
+  const avg = (arr, fn) => arr.length ? (arr.reduce((sum, s) => sum + fn(s), 0) / arr.length).toFixed(1) : null;
+
+  document.getElementById('stat-total').textContent = all.length;
+  document.getElementById('stat-ratio').textContent = withRatio.length ? '1:' + avg(withRatio, s => s.brew_ratio) : '—';
+  document.getElementById('stat-time').textContent = withTime.length ? avg(withTime, s => s.brew_time_secs) + 's' : '—';
+  document.getElementById('stat-rating').textContent = withRating.length ? avg(withRating, s => s.rating) : '—';
+  document.getElementById('stat-dose').textContent = withDose.length ? avg(withDose, s => s.dose_grams) + 'g' : '—';
+  document.getElementById('stat-yield').textContent = withYield.length ? avg(withYield, s => s.yield_grams) + 'g' : '—';
+
+  // Weekly chart
+  const weeks = {};
+  all.forEach(s => {
+    const d = new Date(s.shot_date);
+    const yr = d.getFullYear();
+    const wk = String(Math.ceil(((d - new Date(yr, 0, 1)) / 86400000 + new Date(yr, 0, 1).getDay() + 1) / 7)).padStart(2, '0');
+    const key = `${yr}-${wk}`;
+    if (!weeks[key]) weeks[key] = { week: key, count: 0, ratings: [] };
+    weeks[key].count++;
+    if (s.rating) weeks[key].ratings.push(s.rating);
+  });
+  const weekArr = Object.values(weeks).sort((a, b) => a.week.localeCompare(b.week)).slice(-8);
+
+  if (weekArr.length > 1) {
+    document.getElementById('trends-section').style.display = 'block';
+    const maxCount = Math.max(...weekArr.map(w => w.count), 1);
+    document.getElementById('weekly-chart').innerHTML = weekArr.map(w => {
+      const h = Math.max((w.count / maxCount) * 70, 4);
+      const label = 'W' + w.week.split('-')[1];
+      return `<div class="bar-col"><div class="bar-value">${w.count}</div><div class="bar" style="height:${h}px"></div><div class="bar-label">${label}</div></div>`;
+    }).join('');
+  }
+
+  // Top beans
+  const beanMap = {};
+  all.forEach(s => {
+    if (!beanMap[s.bean_name]) beanMap[s.bean_name] = { count: 0, ratings: [] };
+    beanMap[s.bean_name].count++;
+    if (s.rating) beanMap[s.bean_name].ratings.push(s.rating);
+  });
+  const topBeans = Object.entries(beanMap)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 5);
+
+  if (topBeans.length > 0) {
+    document.getElementById('trends-section').style.display = 'block';
+    document.getElementById('top-beans').innerHTML = topBeans.map(([name, d]) => {
+      const avgR = d.ratings.length ? Math.round(d.ratings.reduce((a, b) => a + b, 0) / d.ratings.length) : 0;
+      return `<div class="top-bean-row"><span>${esc(name)} ${stars(avgR)}</span><span class="count">${d.count} shot${d.count !== 1 ? 's' : ''}</span></div>`;
+    }).join('');
+  }
+
+  // Best shot
+  const best = withRating.sort((a, b) => b.rating - a.rating || b.shot_date.localeCompare(a.shot_date))[0];
+  if (best) {
+    document.getElementById('best-shot-wrap').innerHTML = `
+      <div class="best-shot">
+        <h3>Best Shot</h3>
+        <div style="font-weight:700;font-size:15px;margin-bottom:4px">${esc(best.bean_name)} ${stars(best.rating)}</div>
+        <div style="font-size:12px;color:var(--text-dim)">
+          ${best.dose_grams}g in${best.yield_grams ? ' &rarr; ' + best.yield_grams + 'g out' : ''}${best.brew_ratio ? ' (1:' + best.brew_ratio + ')' : ''}${best.brew_time_secs ? ' &middot; ' + best.brew_time_secs + 's' : ''} &middot; ${best.shot_date}
+        </div>
+        ${best.taste_notes ? `<div style="font-size:12px;font-style:italic;margin-top:4px">${esc(best.taste_notes)}</div>` : ''}
+      </div>`;
+  }
+}
+
+async function updateAutocomplete() {
+  const all = await dbGetAll();
+  const beans = [...new Set(all.map(s => s.bean_name))].sort();
+  const grinders = [...new Set(all.map(s => s.grinder).filter(Boolean))].sort();
+  const machines = [...new Set(all.map(s => s.machine).filter(Boolean))].sort();
+
+  document.getElementById('bean-list').innerHTML = beans.map(b => `<option value="${esc(b)}">`).join('');
+  document.getElementById('grinder-list').innerHTML = grinders.map(g => `<option value="${esc(g)}">`).join('');
+  document.getElementById('machine-list').innerHTML = machines.map(m => `<option value="${esc(m)}">`).join('');
+}
+
+// ====== Filters ======
+function setDayFilter(btn, days) {
+  document.querySelectorAll('.filter-pill:not(.rating-pill)').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.filterDays = days;
+  loadShots();
+}
+
+function setRatingFilter(btn, rating) {
+  document.querySelectorAll('.rating-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.filterRating = rating;
+  loadShots();
+}
+
+// ====== Modal ======
+let currentRating = 0;
+
+function setRating(n) {
+  currentRating = n;
+  document.getElementById('f-rating').value = n;
+  document.querySelectorAll('#star-input span').forEach((s, i) => s.classList.toggle('filled', i < n));
+}
+
+function toggleTaste(btn) {
+  btn.classList.toggle('active');
+  const active = [...document.querySelectorAll('.taste-chip.active')].map(c => c.textContent);
+  const input = document.getElementById('f-taste_notes');
+  const manual = input.value.split(',').map(s => s.trim()).filter(s =>
+    s && ![...document.querySelectorAll('.taste-chip')].some(c => c.textContent === s)
+  );
+  input.value = [...active, ...manual].filter(Boolean).join(', ');
+}
+
+function updateRatio() {
+  const dose = parseFloat(document.getElementById('f-dose_grams').value);
+  const yld = parseFloat(document.getElementById('f-yield_grams').value);
+  document.getElementById('ratio-display').textContent = (dose > 0 && yld > 0) ? '1:' + (yld / dose).toFixed(2) : '—';
+}
+
+function clearForm() {
+  document.getElementById('modal-id').value = '';
+  ['bean_name','bean_origin','bean_roaster','grinder','machine','taste_notes','notes']
+    .forEach(f => document.getElementById('f-' + f).value = '');
+  ['dose_grams','yield_grams','grind_size','brew_time_secs','water_temp_c','pressure_bar']
+    .forEach(f => document.getElementById('f-' + f).value = '');
+  document.getElementById('f-roast_level').value = '';
+  document.getElementById('f-tamp_pressure').value = '';
+  document.getElementById('f-pre_infusion').checked = false;
+  document.getElementById('ratio-display').textContent = '—';
+  setRating(0);
+  document.querySelectorAll('.taste-chip').forEach(c => c.classList.remove('active'));
+  const now = new Date();
+  document.getElementById('f-shot_date').value = now.toISOString().slice(0, 10);
+  document.getElementById('f-shot_time').value = now.toTimeString().slice(0, 5);
+}
+
+function openAddModal() {
+  clearForm();
+  document.getElementById('modal-title').textContent = 'Log Espresso Shot';
+  document.getElementById('shot-modal').showModal();
+}
+
+async function openEditModal(id) {
+  const s = await dbGet(id);
+  if (!s) return;
+  clearForm();
+  document.getElementById('modal-title').textContent = 'Edit Shot';
+  document.getElementById('modal-id').value = s.id;
+  document.getElementById('f-bean_name').value = s.bean_name || '';
+  document.getElementById('f-bean_origin').value = s.bean_origin || '';
+  document.getElementById('f-bean_roaster').value = s.bean_roaster || '';
+  document.getElementById('f-roast_level').value = s.roast_level || '';
+  document.getElementById('f-dose_grams').value = s.dose_grams || '';
+  document.getElementById('f-yield_grams').value = s.yield_grams || '';
+  document.getElementById('f-grind_size').value = s.grind_size != null ? s.grind_size : '';
+  document.getElementById('f-brew_time_secs').value = s.brew_time_secs || '';
+  document.getElementById('f-tamp_pressure').value = s.tamp_pressure || '';
+  document.getElementById('f-grinder').value = s.grinder || '';
+  document.getElementById('f-machine').value = s.machine || '';
+  document.getElementById('f-water_temp_c').value = s.water_temp_c || '';
+  document.getElementById('f-pressure_bar').value = s.pressure_bar || '';
+  document.getElementById('f-pre_infusion').checked = !!s.pre_infusion;
+  document.getElementById('f-taste_notes').value = s.taste_notes || '';
+  document.getElementById('f-notes').value = s.notes || '';
+  document.getElementById('f-shot_date').value = s.shot_date || '';
+  document.getElementById('f-shot_time').value = s.shot_time || '';
+  if (s.rating) setRating(s.rating);
+  updateRatio();
+  if (s.taste_notes) {
+    const notes = s.taste_notes.split(',').map(t => t.trim().toLowerCase());
+    document.querySelectorAll('.taste-chip').forEach(c => {
+      if (notes.includes(c.textContent.toLowerCase())) c.classList.add('active');
+    });
+  }
+  document.getElementById('shot-modal').showModal();
+}
+
+async function submitShot() {
+  const id = document.getElementById('modal-id').value;
+  const dose = parseFloat(document.getElementById('f-dose_grams').value) || null;
+  const yld = parseFloat(document.getElementById('f-yield_grams').value) || null;
+  const beanName = document.getElementById('f-bean_name').value.trim();
+
+  if (!beanName || !dose) {
+    alert('Bean name and dose are required.');
+    return;
+  }
+
+  const shot = {
+    bean_name: beanName,
+    bean_origin: document.getElementById('f-bean_origin').value.trim() || null,
+    bean_roaster: document.getElementById('f-bean_roaster').value.trim() || null,
+    roast_level: document.getElementById('f-roast_level').value || null,
+    dose_grams: dose,
+    yield_grams: yld,
+    brew_ratio: (dose && yld) ? Math.round((yld / dose) * 100) / 100 : null,
+    grind_size: parseInt(document.getElementById('f-grind_size').value) || null,
+    grinder: document.getElementById('f-grinder').value.trim() || null,
+    tamp_pressure: document.getElementById('f-tamp_pressure').value || null,
+    brew_time_secs: parseInt(document.getElementById('f-brew_time_secs').value) || null,
+    water_temp_c: parseFloat(document.getElementById('f-water_temp_c').value) || null,
+    pressure_bar: parseFloat(document.getElementById('f-pressure_bar').value) || null,
+    machine: document.getElementById('f-machine').value.trim() || null,
+    pre_infusion: document.getElementById('f-pre_infusion').checked ? 1 : 0,
+    taste_notes: document.getElementById('f-taste_notes').value.trim() || null,
+    rating: parseInt(document.getElementById('f-rating').value) || null,
+    notes: document.getElementById('f-notes').value.trim() || null,
+    shot_date: document.getElementById('f-shot_date').value || new Date().toISOString().slice(0, 10),
+    shot_time: document.getElementById('f-shot_time').value || new Date().toTimeString().slice(0, 5),
+  };
+
+  if (id) {
+    shot.id = parseInt(id);
+    const existing = await dbGet(shot.id);
+    shot.created_at = existing?.created_at || new Date().toISOString();
+    await dbPut(shot);
+  } else {
+    shot.created_at = new Date().toISOString();
+    await dbAdd(shot);
+  }
+
+  document.getElementById('shot-modal').close();
+  await loadShots();
+}
+
+async function confirmDelete(id) {
+  if (!confirm('Delete this shot?')) return;
+  await dbDelete(id);
+  await loadShots();
+}
+
+// ====== Export / Import ======
+async function exportData() {
+  const all = await dbGetAll();
+  const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `espresso-shots-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const shots = JSON.parse(text);
+    if (!Array.isArray(shots)) throw new Error('Expected an array');
+    let count = 0;
+    for (const s of shots) {
+      if (!s.bean_name || !s.dose_grams) continue;
+      delete s.id; // Let IndexedDB assign new IDs
+      await dbAdd(s);
+      count++;
+    }
+    alert(`Imported ${count} shots.`);
+    await loadShots();
+  } catch (e) {
+    alert('Import failed: ' + e.message);
+  }
+  event.target.value = '';
+}
+
+// ====== Init ======
+document.addEventListener('DOMContentLoaded', async () => {
+  await openDB();
+  await loadShots();
+});
+
+// Register service worker for offline support
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/espresso-sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

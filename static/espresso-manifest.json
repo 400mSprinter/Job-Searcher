@@ -1,0 +1,16 @@
+{
+  "name": "Espresso Tracker",
+  "short_name": "Espresso",
+  "start_url": "/espresso",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "description": "Track your espresso shots — beans, dose, yield, grind, tamp, brew time, taste notes, and ratings.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
