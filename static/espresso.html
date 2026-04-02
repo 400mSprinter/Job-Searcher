@@ -6,107 +6,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#0f1117" />
+  <meta name="theme-color" content="#faf6f1" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="/static/espresso-manifest.json" />
-  <title>Espresso Tracker</title>
+  <title>Coffee Tracker</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0f1117; --surface: #1a1d27; --surface2: #222536; --border: #2e3148;
-      --text: #e2e8f0; --text-dim: #6b7280;
-      --accent: #d97706; --accent-hover: #b45309;
-      --danger: #ef4444; --success: #22c55e; --warm: #78350f;
+      --bg: #faf6f1;
+      --surface: #ffffff;
+      --surface2: #f3ece4;
+      --border: #e0d5c7;
+      --text: #3c2f1e;
+      --text-dim: #8a7968;
+      --accent: #b5651d;
+      --accent-hover: #964d0e;
+      --accent-light: #f5e6d3;
+      --danger: #c0392b;
+      --success: #27ae60;
+      --warm-grad: linear-gradient(135deg, #d4a574 0%, #b5651d 100%);
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; -webkit-tap-highlight-color: transparent; }
-    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
-    header h1 { font-size: 18px; font-weight: 700; }
-    header h1 span { color: var(--accent); }
-    button { cursor: pointer; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; transition: background 0.15s; }
-    .btn-primary { background: var(--accent); color: #fff; padding: 8px 16px; }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-sm { padding: 4px 10px; font-size: 12px; }
-    .btn-ghost { background: transparent; color: var(--text-dim); padding: 4px 8px; }
+    body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; -webkit-tap-highlight-color: transparent; }
+    header { background: var(--warm-grad); padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 12px rgba(140,90,30,0.15); }
+    header h1 { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+    header h1 span { font-weight: 300; opacity: 0.9; }
+    button { cursor: pointer; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: #fff; color: var(--accent); padding: 9px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .btn-primary:hover { background: #f9f3ee; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-ghost { background: transparent; color: var(--text-dim); padding: 5px 10px; border-radius: 6px; }
     .btn-ghost:hover { background: var(--surface2); color: var(--text); }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 7px 14px; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 16px; }
     .btn-outline:hover { background: var(--surface2); }
-    main { padding: 16px 20px; max-width: 600px; margin: 0 auto; }
+    main { padding: 20px 20px; max-width: 600px; margin: 0 auto; }
 
     /* Stats */
-    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; text-align: center; }
-    .stat-value { font-size: 20px; font-weight: 700; color: var(--accent); }
-    .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: var(--surface); border-radius: 14px; padding: 14px 10px; text-align: center; box-shadow: 0 1px 6px rgba(140,90,30,0.08); }
+    .stat-value { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; font-weight: 600; }
 
     /* Filters */
-    .filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-    .filter-pill { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.15s; }
-    .filter-pill:hover { border-color: var(--accent); color: var(--text); }
-    .filter-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .filters { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .filter-pill { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+    .filter-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 6px rgba(181,101,29,0.25); }
 
     /* Shot cards */
-    .shots-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-    .shot-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: border-color 0.15s; }
-    .shot-card:hover { border-color: var(--accent); }
-    .shot-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-    .shot-bean { font-weight: 700; font-size: 15px; }
+    .shots-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+    .shot-card { background: var(--surface); border-radius: 14px; padding: 16px 18px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 6px rgba(140,90,30,0.06); border-left: 4px solid transparent; }
+    .shot-card:hover { box-shadow: 0 4px 16px rgba(140,90,30,0.12); border-left-color: var(--accent); transform: translateY(-1px); }
+    .shot-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .shot-bean { font-weight: 700; font-size: 16px; color: var(--text); }
     .shot-date { color: var(--text-dim); font-size: 12px; }
-    .shot-params { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
-    .shot-param { background: var(--surface2); padding: 3px 10px; border-radius: 12px; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
-    .shot-param b { color: var(--text); font-weight: 600; }
+    .shot-params { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .shot-param { background: var(--accent-light); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--accent); white-space: nowrap; font-weight: 500; }
+    .shot-param b { color: var(--text); font-weight: 700; }
     .shot-bottom { display: flex; justify-content: space-between; align-items: center; }
     .shot-taste { color: var(--text-dim); font-size: 12px; font-style: italic; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .shot-rating { color: var(--accent); font-size: 14px; letter-spacing: 1px; }
+    .shot-rating { font-size: 14px; letter-spacing: 1px; }
     .shot-actions { display: flex; gap: 4px; }
-    .empty-state { text-align: center; color: var(--text-dim); padding: 60px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
-    .empty-state p { margin-bottom: 12px; }
+    .empty-state { text-align: center; color: var(--text-dim); padding: 60px 20px; background: var(--surface); border-radius: 14px; box-shadow: 0 1px 6px rgba(140,90,30,0.06); }
+    .empty-state p { margin-bottom: 14px; font-size: 15px; }
 
     /* Trends */
-    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-    .panel h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .panel { background: var(--surface); border-radius: 14px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(140,90,30,0.06); }
+    .panel h2 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--accent); }
     .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
     .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-    .bar { width: 100%; max-width: 36px; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
-    .bar-label { font-size: 9px; color: var(--text-dim); margin-top: 3px; }
-    .bar-value { font-size: 10px; color: var(--text); margin-bottom: 2px; }
-    .top-beans-list { display: flex; flex-direction: column; gap: 6px; }
-    .top-bean-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--surface2); border-radius: 6px; font-size: 13px; }
+    .bar { width: 100%; max-width: 36px; background: var(--warm-grad); border-radius: 6px 6px 0 0; min-height: 4px; transition: height 0.3s; }
+    .bar-label { font-size: 9px; color: var(--text-dim); margin-top: 4px; font-weight: 600; }
+    .bar-value { font-size: 10px; color: var(--text); margin-bottom: 2px; font-weight: 700; }
+    .top-beans-list { display: flex; flex-direction: column; gap: 8px; }
+    .top-bean-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface2); border-radius: 10px; font-size: 13px; font-weight: 500; }
     .top-bean-row .count { color: var(--text-dim); font-size: 12px; }
-    .best-shot { background: linear-gradient(135deg, var(--warm) 0%, var(--surface) 100%); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
-    .best-shot h3 { font-size: 13px; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .best-shot { background: var(--warm-grad); border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; color: #fff; box-shadow: 0 4px 16px rgba(181,101,29,0.2); }
+    .best-shot h3 { font-size: 11px; color: rgba(255,255,255,0.8); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
 
     /* Modal */
-    dialog { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0; color: var(--text); width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
-    dialog::backdrop { background: rgba(0,0,0,0.7); }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1; }
-    .modal-header h3 { font-size: 15px; font-weight: 600; }
-    .modal-body { padding: 16px 20px; display: grid; gap: 12px; }
-    .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--surface); }
-    label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
-    input, select, textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px 10px; font-size: 16px; font-family: inherit; }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
-    select option { background: var(--surface2); }
+    dialog { background: var(--bg); border: none; border-radius: 16px; padding: 0; color: var(--text); width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+    dialog::backdrop { background: rgba(60,47,30,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 1; border-radius: 16px 16px 0 0; }
+    .modal-header h3 { font-size: 17px; font-weight: 700; color: var(--accent); }
+    .modal-body { padding: 18px 22px; display: grid; gap: 14px; }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--bg); border-radius: 0 0 16px 16px; }
+    .modal-footer .btn-primary { background: var(--accent); color: #fff; }
+    .modal-footer .btn-primary:hover { background: var(--accent-hover); }
+    label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; }
+    input, select, textarea { width: 100%; background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); padding: 10px 12px; font-size: 16px; font-family: inherit; transition: border-color 0.2s; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(181,101,29,0.12); }
+    select option { background: var(--surface); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    .form-section { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 600; padding-top: 4px; border-top: 1px solid var(--border); }
-    .ratio-display { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 16px; text-align: center; color: var(--accent); font-weight: 700; }
+    .form-section { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; padding-top: 6px; border-top: 1.5px solid var(--border); }
+    .ratio-display { background: var(--accent-light); border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 16px; text-align: center; color: var(--accent); font-weight: 800; }
     .star-input { display: flex; gap: 4px; }
-    .star-input span { cursor: pointer; font-size: 28px; color: var(--border); transition: color 0.1s; user-select: none; -webkit-user-select: none; }
-    .star-input span.filled { color: var(--accent); }
-    .taste-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
-    .taste-chip { padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.15s; }
-    .taste-chip:hover { border-color: var(--accent); color: var(--text); }
-    .taste-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .star-input span { cursor: pointer; font-size: 30px; color: var(--border); transition: color 0.15s; user-select: none; -webkit-user-select: none; }
+    .star-input span.filled { color: #e6a817; }
+    .taste-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .taste-chip { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+    .taste-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .taste-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 1px 4px rgba(181,101,29,0.2); }
     .checkbox-wrap { display: flex; align-items: center; gap: 8px; }
     .checkbox-wrap input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 
+    /* Tamp slider */
+    .tamp-slider-wrap { display: flex; align-items: center; gap: 10px; }
+    .tamp-slider-wrap input[type="range"] { flex: 1; accent-color: var(--accent); padding: 0; border: none; background: transparent; height: 20px; }
+    .tamp-slider-wrap input[type="range"]:focus { box-shadow: none; }
+    .tamp-val { font-size: 18px; font-weight: 800; color: var(--accent); min-width: 24px; text-align: center; }
+    .tamp-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); margin-top: -2px; font-weight: 500; }
+
+    /* Type toggle */
+    .type-toggle { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); background: var(--surface); }
+    .type-toggle button { flex: 1; padding: 10px 0; border: none; background: transparent; color: var(--text-dim); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .type-toggle button.active { background: var(--accent); color: #fff; }
+
+    /* Filter row */
+    .filter-group { margin-bottom: 6px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .filter-group-label { font-size: 11px; color: var(--text-dim); font-weight: 600; min-width: 44px; }
+
     /* Export/import bar */
-    .data-bar { display: flex; gap: 8px; justify-content: center; padding: 16px 0; }
-    .data-bar button { font-size: 11px; color: var(--text-dim); }
+    .data-bar { display: flex; gap: 8px; justify-content: center; padding: 20px 0 8px; }
+    .data-bar button { font-size: 11px; color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; background: var(--surface); }
+    .data-bar button:hover { background: var(--surface2); }
 
     @media (max-width: 500px) {
-      main { padding: 12px; }
-      header { padding: 12px 16px; }
+      main { padding: 16px 12px; }
+      header { padding: 16px; }
       .form-row-3 { grid-template-columns: 1fr 1fr; }
       .form-row-3 > :last-child { grid-column: 1 / -1; }
     }
@@ -115,13 +142,13 @@
 <body>
 
 <header>
-  <h1><span>Espresso</span> Tracker</h1>
-  <button class="btn-primary" onclick="openAddModal()">+ Log Shot</button>
+  <h1>Coffee <span>Tracker</span></h1>
+  <button class="btn-primary" onclick="openAddModal()">+ Log</button>
 </header>
 
 <main>
   <div class="stats-row" id="stats-row">
-    <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Shots</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-ratio">—</div><div class="stat-label">Avg Ratio</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-time">—</div><div class="stat-label">Avg Time</div></div>
     <div class="stat-card"><div class="stat-value" id="stat-rating">—</div><div class="stat-label">Avg Rating</div></div>
@@ -129,15 +156,41 @@
     <div class="stat-card"><div class="stat-value" id="stat-yield">—</div><div class="stat-label">Avg Yield</div></div>
   </div>
 
-  <div class="filters">
-    <button class="filter-pill active" onclick="setDayFilter(this, null)">All</button>
-    <button class="filter-pill" onclick="setDayFilter(this, 7)">7d</button>
-    <button class="filter-pill" onclick="setDayFilter(this, 30)">30d</button>
-    <button class="filter-pill" onclick="setDayFilter(this, 90)">90d</button>
-    <span style="color:var(--text-dim);font-size:11px;margin-left:6px">Rating:</span>
+  <!-- Filters -->
+  <div class="filter-group">
+    <span class="filter-group-label">Type:</span>
+    <button class="filter-pill type-pill active" onclick="setTypeFilter(this, null)">All</button>
+    <button class="filter-pill type-pill" onclick="setTypeFilter(this, 'Espresso')">Espresso</button>
+    <button class="filter-pill type-pill" onclick="setTypeFilter(this, 'Drip')">Drip</button>
+  </div>
+  <div class="filter-group">
+    <span class="filter-group-label">Time:</span>
+    <button class="filter-pill day-pill active" onclick="setDayFilter(this, null)">All</button>
+    <button class="filter-pill day-pill" onclick="setDayFilter(this, 7)">7d</button>
+    <button class="filter-pill day-pill" onclick="setDayFilter(this, 30)">30d</button>
+    <button class="filter-pill day-pill" onclick="setDayFilter(this, 90)">90d</button>
+  </div>
+  <div class="filter-group">
+    <span class="filter-group-label">Rating:</span>
     <button class="filter-pill rating-pill active" onclick="setRatingFilter(this, null)">Any</button>
+    <button class="filter-pill rating-pill" onclick="setRatingFilter(this, 3)">3+</button>
     <button class="filter-pill rating-pill" onclick="setRatingFilter(this, 4)">4+</button>
     <button class="filter-pill rating-pill" onclick="setRatingFilter(this, 5)">5</button>
+  </div>
+  <div class="filter-group">
+    <span class="filter-group-label">Dose:</span>
+    <button class="filter-pill dose-pill active" onclick="setDoseFilter(this, null, null)">Any</button>
+    <button class="filter-pill dose-pill" onclick="setDoseFilter(this, 0, 10)">0-10g</button>
+    <button class="filter-pill dose-pill" onclick="setDoseFilter(this, 10, 18)">10-18g</button>
+    <button class="filter-pill dose-pill" onclick="setDoseFilter(this, 18, 22)">18-22g</button>
+    <button class="filter-pill dose-pill" onclick="setDoseFilter(this, 22, null)">22g+</button>
+  </div>
+  <div class="filter-group" style="margin-bottom:16px">
+    <span class="filter-group-label">Tamp:</span>
+    <button class="filter-pill tamp-pill active" onclick="setTampFilter(this, null, null)">Any</button>
+    <button class="filter-pill tamp-pill" onclick="setTampFilter(this, 1, 3)">1-3</button>
+    <button class="filter-pill tamp-pill" onclick="setTampFilter(this, 4, 6)">4-6</button>
+    <button class="filter-pill tamp-pill" onclick="setTampFilter(this, 7, 10)">7-10</button>
   </div>
 
   <div class="shots-list" id="shots-list">
@@ -172,6 +225,15 @@
   </div>
   <div class="modal-body">
     <input type="hidden" id="modal-id" />
+
+    <div>
+      <label>Coffee Type *</label>
+      <div class="type-toggle" id="type-toggle">
+        <button type="button" class="active" onclick="setCoffeeType('Espresso')">Espresso</button>
+        <button type="button" onclick="setCoffeeType('Drip')">Drip Coffee</button>
+      </div>
+      <input type="hidden" id="f-coffee_type" value="Espresso" />
+    </div>
 
     <div class="form-section">Beans</div>
     <div class="form-row">
@@ -227,14 +289,13 @@
         <label>Brew Time (s)</label>
         <input type="number" id="f-brew_time_secs" min="0" inputmode="numeric" />
       </div>
-      <div>
-        <label>Tamp</label>
-        <select id="f-tamp_pressure">
-          <option value="">—</option>
-          <option>Light</option>
-          <option>Medium</option>
-          <option>Hard</option>
-        </select>
+      <div class="espresso-only">
+        <label>Tamp Pressure</label>
+        <div class="tamp-slider-wrap">
+          <input type="range" id="f-tamp_pressure" min="0" max="10" value="0" oninput="document.getElementById('tamp-val').textContent=this.value==0?'—':this.value" />
+          <span class="tamp-val" id="tamp-val">—</span>
+        </div>
+        <div class="tamp-labels"><span>Light</span><span>Hard</span></div>
       </div>
     </div>
 
@@ -256,11 +317,11 @@
         <label>Water Temp (&deg;C)</label>
         <input type="number" id="f-water_temp_c" step="0.1" min="0" inputmode="decimal" />
       </div>
-      <div>
+      <div class="espresso-only">
         <label>Pressure (bar)</label>
         <input type="number" id="f-pressure_bar" step="0.1" min="0" inputmode="decimal" />
       </div>
-      <div>
+      <div class="espresso-only">
         <label>&nbsp;</label>
         <div class="checkbox-wrap" style="height:100%;align-items:center">
           <input type="checkbox" id="f-pre_infusion" />
@@ -391,7 +452,7 @@ function dbGetAll() {
 }
 
 // ====== App State ======
-const STATE = { shots: [], filterDays: null, filterRating: null };
+const STATE = { shots: [], filterDays: null, filterRating: null, filterType: null, filterDoseMin: null, filterDoseMax: null, filterTampMin: null, filterTampMax: null };
 
 function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -399,8 +460,8 @@ function esc(str) {
 
 function stars(n) {
   if (!n) return '';
-  return '<span style="color:var(--accent)">' + '\u2605'.repeat(n) + '</span>' +
-         '<span style="color:var(--border)">' + '\u2605'.repeat(5 - n) + '</span>';
+  return '<span style="color:#e6a817">' + '\u2605'.repeat(n) + '</span>' +
+         '<span style="color:#ddd4c8">' + '\u2605'.repeat(5 - n) + '</span>';
 }
 
 // ====== Load & Render ======
@@ -410,6 +471,9 @@ async function loadShots() {
   all.sort((a, b) => (b.shot_date + (b.shot_time || '')).localeCompare(a.shot_date + (a.shot_time || '')));
 
   // Apply filters
+  if (STATE.filterType) {
+    all = all.filter(s => s.coffee_type === STATE.filterType);
+  }
   if (STATE.filterDays) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - STATE.filterDays);
@@ -418,6 +482,23 @@ async function loadShots() {
   }
   if (STATE.filterRating) {
     all = all.filter(s => s.rating && s.rating >= STATE.filterRating);
+  }
+  if (STATE.filterDoseMin != null || STATE.filterDoseMax != null) {
+    all = all.filter(s => {
+      if (!s.dose_grams) return false;
+      if (STATE.filterDoseMin != null && s.dose_grams < STATE.filterDoseMin) return false;
+      if (STATE.filterDoseMax != null && s.dose_grams > STATE.filterDoseMax) return false;
+      return true;
+    });
+  }
+  if (STATE.filterTampMin != null || STATE.filterTampMax != null) {
+    all = all.filter(s => {
+      const t = parseInt(s.tamp_pressure);
+      if (!t) return false;
+      if (STATE.filterTampMin != null && t < STATE.filterTampMin) return false;
+      if (STATE.filterTampMax != null && t > STATE.filterTampMax) return false;
+      return true;
+    });
   }
 
   STATE.shots = all;
@@ -429,14 +510,14 @@ async function loadShots() {
 function renderShots() {
   const container = document.getElementById('shots-list');
   if (STATE.shots.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>No espresso shots logged yet.</p><button class="btn-primary" onclick="openAddModal()">Log Your First Shot</button></div>';
+    container.innerHTML = '<div class="empty-state"><p>No coffee shots logged yet.</p><button class="btn-primary" onclick="openAddModal()">Log Your First Shot</button></div>';
     return;
   }
   container.innerHTML = STATE.shots.map(s => `
     <div class="shot-card" onclick="openEditModal(${s.id})">
       <div class="shot-card-top">
         <div>
-          <div class="shot-bean">${esc(s.bean_name)}</div>
+          <div class="shot-bean">${esc(s.bean_name)} <span style="font-size:11px;font-weight:500;color:var(--text-dim);background:var(--accent-light);padding:1px 8px;border-radius:10px;vertical-align:middle">${esc(s.coffee_type || 'Espresso')}</span></div>
           ${s.bean_roaster ? `<div style="color:var(--text-dim);font-size:12px">${esc(s.bean_roaster)}${s.roast_level ? ' &middot; ' + esc(s.roast_level) : ''}</div>` : ''}
         </div>
         <div style="text-align:right">
@@ -450,7 +531,7 @@ function renderShots() {
         ${s.brew_ratio ? `<span class="shot-param">1:<b>${s.brew_ratio}</b></span>` : ''}
         ${s.brew_time_secs ? `<span class="shot-param"><b>${s.brew_time_secs}s</b></span>` : ''}
         ${s.grind_size != null ? `<span class="shot-param">Grind <b>${s.grind_size}</b></span>` : ''}
-        ${s.tamp_pressure ? `<span class="shot-param">Tamp <b>${esc(s.tamp_pressure)}</b></span>` : ''}
+        ${s.tamp_pressure ? `<span class="shot-param">Tamp <b>${esc(s.tamp_pressure)}/10</b></span>` : ''}
         ${s.grinder ? `<span class="shot-param">${esc(s.grinder)}</span>` : ''}
         ${s.machine ? `<span class="shot-param">${esc(s.machine)}</span>` : ''}
       </div>
@@ -536,11 +617,11 @@ async function renderStats() {
     document.getElementById('best-shot-wrap').innerHTML = `
       <div class="best-shot">
         <h3>Best Shot</h3>
-        <div style="font-weight:700;font-size:15px;margin-bottom:4px">${esc(best.bean_name)} ${stars(best.rating)}</div>
-        <div style="font-size:12px;color:var(--text-dim)">
+        <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:#fff">${esc(best.bean_name)} ${stars(best.rating)}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.8)">
           ${best.dose_grams}g in${best.yield_grams ? ' &rarr; ' + best.yield_grams + 'g out' : ''}${best.brew_ratio ? ' (1:' + best.brew_ratio + ')' : ''}${best.brew_time_secs ? ' &middot; ' + best.brew_time_secs + 's' : ''} &middot; ${best.shot_date}
         </div>
-        ${best.taste_notes ? `<div style="font-size:12px;font-style:italic;margin-top:4px">${esc(best.taste_notes)}</div>` : ''}
+        ${best.taste_notes ? `<div style="font-size:12px;font-style:italic;margin-top:4px;color:rgba(255,255,255,0.85)">${esc(best.taste_notes)}</div>` : ''}
       </div>`;
   }
 }
@@ -557,8 +638,15 @@ async function updateAutocomplete() {
 }
 
 // ====== Filters ======
+function setTypeFilter(btn, type) {
+  document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.filterType = type;
+  loadShots();
+}
+
 function setDayFilter(btn, days) {
-  document.querySelectorAll('.filter-pill:not(.rating-pill)').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   STATE.filterDays = days;
   loadShots();
@@ -571,8 +659,32 @@ function setRatingFilter(btn, rating) {
   loadShots();
 }
 
+function setDoseFilter(btn, min, max) {
+  document.querySelectorAll('.dose-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.filterDoseMin = min;
+  STATE.filterDoseMax = max;
+  loadShots();
+}
+
+function setTampFilter(btn, min, max) {
+  document.querySelectorAll('.tamp-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.filterTampMin = min;
+  STATE.filterTampMax = max;
+  loadShots();
+}
+
 // ====== Modal ======
 let currentRating = 0;
+
+function setCoffeeType(type) {
+  document.getElementById('f-coffee_type').value = type;
+  document.querySelectorAll('#type-toggle button').forEach(b => b.classList.toggle('active', b.textContent.startsWith(type)));
+  // Show/hide espresso-specific fields
+  const isEspresso = type === 'Espresso';
+  document.querySelectorAll('.espresso-only').forEach(el => el.style.display = isEspresso ? '' : 'none');
+}
 
 function setRating(n) {
   currentRating = n;
@@ -598,12 +710,14 @@ function updateRatio() {
 
 function clearForm() {
   document.getElementById('modal-id').value = '';
+  setCoffeeType('Espresso');
   ['bean_name','bean_origin','bean_roaster','grinder','machine','taste_notes','notes']
     .forEach(f => document.getElementById('f-' + f).value = '');
   ['dose_grams','yield_grams','grind_size','brew_time_secs','water_temp_c','pressure_bar']
     .forEach(f => document.getElementById('f-' + f).value = '');
   document.getElementById('f-roast_level').value = '';
-  document.getElementById('f-tamp_pressure').value = '';
+  document.getElementById('f-tamp_pressure').value = '0';
+  document.getElementById('tamp-val').textContent = '—';
   document.getElementById('f-pre_infusion').checked = false;
   document.getElementById('ratio-display').textContent = '—';
   setRating(0);
@@ -625,6 +739,7 @@ async function openEditModal(id) {
   clearForm();
   document.getElementById('modal-title').textContent = 'Edit Shot';
   document.getElementById('modal-id').value = s.id;
+  setCoffeeType(s.coffee_type || 'Espresso');
   document.getElementById('f-bean_name').value = s.bean_name || '';
   document.getElementById('f-bean_origin').value = s.bean_origin || '';
   document.getElementById('f-bean_roaster').value = s.bean_roaster || '';
@@ -633,7 +748,8 @@ async function openEditModal(id) {
   document.getElementById('f-yield_grams').value = s.yield_grams || '';
   document.getElementById('f-grind_size').value = s.grind_size != null ? s.grind_size : '';
   document.getElementById('f-brew_time_secs').value = s.brew_time_secs || '';
-  document.getElementById('f-tamp_pressure').value = s.tamp_pressure || '';
+  document.getElementById('f-tamp_pressure').value = s.tamp_pressure || '0';
+  document.getElementById('tamp-val').textContent = s.tamp_pressure ? s.tamp_pressure : '—';
   document.getElementById('f-grinder').value = s.grinder || '';
   document.getElementById('f-machine').value = s.machine || '';
   document.getElementById('f-water_temp_c').value = s.water_temp_c || '';
@@ -666,6 +782,7 @@ async function submitShot() {
   }
 
   const shot = {
+    coffee_type: document.getElementById('f-coffee_type').value || 'Espresso',
     bean_name: beanName,
     bean_origin: document.getElementById('f-bean_origin').value.trim() || null,
     bean_roaster: document.getElementById('f-bean_roaster').value.trim() || null,
@@ -675,7 +792,7 @@ async function submitShot() {
     brew_ratio: (dose && yld) ? Math.round((yld / dose) * 100) / 100 : null,
     grind_size: parseInt(document.getElementById('f-grind_size').value) || null,
     grinder: document.getElementById('f-grinder').value.trim() || null,
-    tamp_pressure: document.getElementById('f-tamp_pressure').value || null,
+    tamp_pressure: parseInt(document.getElementById('f-tamp_pressure').value) || null,
     brew_time_secs: parseInt(document.getElementById('f-brew_time_secs').value) || null,
     water_temp_c: parseFloat(document.getElementById('f-water_temp_c').value) || null,
     pressure_bar: parseFloat(document.getElementById('f-pressure_bar').value) || null,
