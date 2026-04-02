@@ -1,0 +1,16 @@
+{
+  "name": "Coffee Tracker",
+  "short_name": "Coffee",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#faf6f1",
+  "theme_color": "#faf6f1",
+  "description": "Track your espresso and drip coffee — beans, dose, yield, grind, tamp, brew time, taste notes, and ratings.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
